@@ -20,13 +20,14 @@ with the three characters "z3 " (unshifted z, 3 and a blank)
 and it must be a sequential file (SEQ).
 
 # Example for the disk content:
-
+```
 c1541 #8> dir
 0 "zork-i          " bs 3d
 26    "z3-mega65"         prg
 335   "z3 zork-i"         seq
 2799 blocks free.
 c1541 #8>
+```
 
 # How to play
 
