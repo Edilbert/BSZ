@@ -1,3 +1,8 @@
+; *************************************
+; * BSZ = Bit Shifter's Z interpreter *
+; *       for MEGA65      30-Jul-2020 *
+; *************************************
+
 .CPU 45GS02
 
 ZV     = 3   ; Z machine version
@@ -40,30 +45,19 @@ LT_GREY  = 15
 ; * display control codes *
 ; *************************
 
-PR_WHITE      = $05
 BACKSPACE     = $08
 TAB           = $09
 CR            = $0d
-BLINK_ON      = $0f
 CURSOR_DOWN   = $11
 REVERSE_ON    = $12
 HOME          = $13
 DEL           = $14
 ESC           = $1b
 CURSOR_RIGHT  = $1d
-PR_BLUE       = $1f
-UNDERLINE_OFF = $82
 CLEAR         = $93
 CURSOR_UP     = $91
 REVERSE_OFF   = $92
 CURSOR_LEFT   = $9d
-PR_YELLOW     = $9e
-PR_CYAN       = $9f
-
-ZCU_UP        = $81
-ZCU_DOWN      = $82
-ZCU_LEFT      = $83
-ZCU_RIGHT     = $84
 
 ; ********************************************************
 ; * Interpreter Zero page variables (occupy BASIC space) *
@@ -340,17 +334,14 @@ START = $2001   ; *** BASIC ***  C65
           .BYTE $9e       ; SYS  token
           .BYTE "(8253):" ; C65  start
           .BYTE $8f       ; REM  token
-          .BYTE " BIT SHIFTER 22-JUL-20",0
+          .BYTE " BIT SHIFTER 30-JUL-20",0
 Link      .WORD 0         ; BASIC end marker
 
-; *************
-  Program_Setup
-; *************
+; SYS entry for MEGA65 mode
+
           JMP MEGA_Setup
 
-; ********
-  Relocate
-; ********
+; SYS entry for C64 mode
 
           lda #65   ; 40MHz CPU
           sta 0
@@ -379,14 +370,14 @@ ReLoop    LDA (A0L),Y
   MEGA_Setup
 ; **********
           sei
-          lda #$37
+          lda #$36            ; I/O & kernal
           sta R6510
-          lda #0
+          lda #0              ; Configure MEGA65 memory
           tax
           tay
-          .BYTE $4b ; taz
-          .BYTE $5c ; map
-          nop       ; eom
+          taz
+          map
+          eom
 
           lda #65   ; 40 MHz
           sta 0
@@ -395,16 +386,13 @@ ReLoop    LDA (A0L),Y
           jsr $fd15 ; set I/O vectors
           jsr $ff5b ; more init
 
-          lda #$36
-          sta R6510
-
-          LDX #8
-          LDA #-1
+          LDA #-1             ; cursor off
           STA BLNSW
+          CLI
+          LDX #8
           STX FA
           STX Game_Unit
           STX Save_Unit       ; default SAVE unit = GAME unit
-          CLI
 
           JSR Load_Config
           JSR Set_Mode_80
@@ -416,8 +404,6 @@ ReLoop    LDA (A0L),Y
           LDA BO_Color
           STA BorderCol
           JSR Clear_Screen
-;         LDA #14             ; Switch to lower case
-;         JSR CHROUT
           JSR SETMSG          ; disable kernal messages
           JMP z_restart
 
@@ -2939,7 +2925,7 @@ DiSe_70   STA X7H             ; not found: return (X7) = 0
 
           LDA #0
           STA RAM_BA
-          .BYTE $ab,QD0,0     ; LDZ QD0
+          LDZ QD0
           LDA QD2             ; page high
           BNE NEDA_10         ; > 64 K
           LDA QD1
@@ -2960,9 +2946,8 @@ NEDA_10   SEC
           SBC #0              ; page high
           ADC #3              ; bank 4 = carry  + 3
           STA RAM_BA
-NEDA_50   NOP
-          .BYTE $b2,RAM_LO    ; LDA (RAM_LO),Z
-NEDA_60   INC QD0
+NEDA_50   LDA [RAM_LO],Z
+          INC QD0
           BNE NEDA_80
           INC QD1
           BNE NEDA_80
@@ -2988,7 +2973,7 @@ NEDA_80   CMP #0              ; set flags
 
           LDA #0
           STA RAM_BA
-          .BYTE $ab,QI0,0     ; LDZ QI0
+          LDZ QI0
           LDA QI2             ; page high
           BNE NEIN_10         ; > 64 K
           LDA QI1
@@ -3009,9 +2994,8 @@ NEIN_10   SEC
           SBC #0              ; page high
           ADC #3              ; bank 4 = carry  + 3
           STA RAM_BA
-NEIN_50   NOP
-          .BYTE $b2,RAM_LO    ; LDA (RAM_LO),Z
-NEIN_60   INC QI0
+NEIN_50   LDA [RAM_LO],Z
+          INC QI0
           BNE NEIN_80
           INC QI1
           BNE NEIN_80
@@ -3550,11 +3534,7 @@ PrFo_50   CPX Charbuf_End
           INX
           BCC PrFo_45
           STY Charbuf_Ptr
-
-
-; compute pixel length of remaining buffer input
-
-PrFo_Ret  RTS
+          RTS
 
 ; ************
   z_new_line
@@ -3862,8 +3842,7 @@ FiCo_10   LDA FG_Color,X
 ; compare char with CR before return
 
           CLI
-          TYA
-          PHA                 ; save Y
+          PHY                 ; save Y
           JSR Cursor_On
 GeCh_10   JSR GETIN
           BEQ GeCh_10
@@ -3893,11 +3872,8 @@ GeCh_30   JSR Error_Beep      ; unacceptable
 
 GeCh_40   PHA                 ; push char
           JSR Cursor_Off
-GeCh_50   PLA
-          TAX
           PLA
-          TAY                 ; restore Y
-          TXA
+          PLY                 ; restore Y
           CMP #CR
           RTS
 
@@ -3971,8 +3947,8 @@ SMW_30    LDA #' '
   Clear_Screen
 ; ************
 
-          .BYTE $da ; PHX
-          .BYTE $5a ; PHY
+          PHX
+          PHY
           LDX #0
           JSR Set_Screen_Pointer_X
           LDX #8
@@ -3986,25 +3962,24 @@ ClSc_10   STA (Scr_Adr),Y
           BNE ClSc_10
           LDX #8
           LDA #1
-          .BYTE $a3,0       ; LDZ #0
-ClSc_20   NOP
-          .BYTE $92,Col_Adr ; STA [Col_Adr],Z
-          .BYTE $1b         ; INZ
+          LDZ #0
+ClSc_20   STA [Col_Adr],Z
+          INZ
           BNE ClSc_20
           INC Col_Adr+1
           DEX
           BNE ClSc_20
           STX Cursor_Col
           JSR Set_Screen_Pointer_X
-          .BYTE $7a ; PLY
-          .BYTE $fa ; PLX
+          PLY
+          PLX
           RTS
 
 ; *************
   Return_Screen
 ; *************
-          .BYTE $da ; PHX
-          .BYTE $5a ; PHY
+          PHX
+          PHY
           LDY #0
           STY Cursor_Col
           LDX Cursor_Row
@@ -4015,8 +3990,8 @@ ClSc_20   NOP
           LDX #ROWS-1
 ReSc_10   STX Cursor_Row
           JSR Set_Screen_Pointer_X
-          .BYTE $7a ; PLY
-          .BYTE $fa ; PLX
+          PLY
+          PLX
 
 ; ******************
   Screen_Reverse_Off
@@ -4791,14 +4766,13 @@ asts_01   INX
           JSR TALK            ; open channel
           LDA #$68            ; SA = 8
           JSR TKSA            ; select channel to disk buffer
-          .BYTE $a3,0         ; LDZ #0
-          .BYTE $64,IO_STATUS ; STZ IO_STATUS
+          LDZ #0
+          STZ IO_STATUS
 LoPa_10   JSR ACPTR
-          NOP                 ; 32 bit address mode
-          .BYTE $92,RAM_LO    ; STA (RAM_LO),Z
+          STA [RAM_LO],Z
           LDA IO_STATUS
           BNE LoPa_20
-          .BYTE $1b           ; INZ
+          INZ
           BNE LoPa_10
 LoPa_20   JSR UNTLK           ; 256 bytes read, send untalk
           INC Block_Lo        ; increment block number Block_Lo/Hi
@@ -5007,21 +4981,17 @@ SAVEUNIT  .BYTE "Save to unit:"
 SAVEFILE  .BYTE "Save to file:"
 LOADUNIT  .BYTE "Restore from unit:"
 LOADFILE  .BYTE "Restore from file:"
-MORE      .BYTE PR_YELLOW,REVERSE_ON,"<MORE>",REVERSE_OFF,PR_WHITE
+MORE      .BYTE REVERSE_ON,"<MORE>",REVERSE_OFF
 EOS       .BYTE "End of session - press any key"
-
-TOOBIG    .BYTE 'THIS STORY IS TOO BIG'
-
-
 NOSTORY   .BYTE "NO Z3 STORY"
 
 
-   BITSHIFTER .BYTE CLEAR,"BIT SHIFTER 12-JUL-2020\r"
-   InfoClr    .BYTE CR
-   InfoPro    .BYTE 'Program: 0001 - 00FF    0 Pages\r'
-   InfoSta    .BYTE 'Bank  0: 0000 - 00FF    0 Pages\r'
-   InfoSto    .BYTE 'Story  :        Size    0 Pages\r',0
-   InfoEnd
+BITSHIFTER .BYTE CLEAR,"BIT SHIFTER 30-JUL-2020\r"
+InfoClr    .BYTE CR
+InfoPro    .BYTE 'Program: 0001 - 00FF    0 Pages\r'
+InfoSta    .BYTE 'Bank  0: 0000 - 00FF    0 Pages\r'
+InfoSto    .BYTE 'Story  :        Size    0 Pages\r',0
+InfoEnd
 
 BLANKS    .BYTE "            "
 
@@ -5031,7 +5001,6 @@ MOVES_COL  = 22
 
 SCORE      .BYTE "Score: 0       Moves: 0     ",0
 STIME      .BYTE "Time: 00:00",0
-MOVES      .BYTE "  Moves: 0     ",0
 SCORE_COL  =  7
 STIME_COL  =  6
 
