@@ -1,6 +1,6 @@
 ; *************************************
 ; * BSZ = Bit Shifter's Z interpreter *
-; *       for MEGA65      30-Jul-2020 *
+; *       for MEGA65      06-Aug-2020 *
 ; *************************************
 
 .CPU 45GS02
@@ -169,30 +169,36 @@ Charbuf = $0200
 ; * system variables *
 ; ********************
 
-COLS       =  80
-ROWS       =  25
-R6510      = $01              ; C64 bank switching CPU port
-IO_STATUS  = $90              ; used by I/O routines
-SAP        = $ac              ; source address pointer
-TAP        = $ae              ; target address pointer
-FNLEN      = $b7
-FA         = $ba
-FNADR      = $bb
-MEMUSS     = $c3              ; string address
-RVS        = $c7              ; reverse flag
-BLNSW      = $cc              ; cursor blink flag
-BLNCT      = $cd
-BLNON      = $cf
-COLOR      = $286
-KEYRPT     = $28a             ; $80 = all, $40 = none, $00 sursor, space
-MODE       = $291
-DSTATUS    = $33c             ; 40 bytes disk status
-SCREEN     = $0800            ; character RAM
-COLRAM     = $d800            ; color     RAM
-Raster     = $d012
-BorderCol  = $d020
-BackgCol0  = $d021
-Random     = $d41b
+COLS        =  80
+ROWS        =  25
+R6510       = $01              ; C64 bank switching CPU port
+IO_STATUS   = $90              ; used by I/O routines
+SAP         = $ac              ; source address pointer
+TAP         = $ae              ; target address pointer
+FNLEN       = $b7
+FA          = $ba
+FNADR       = $bb
+MEMUSS      = $c3              ; string address
+RVS         = $c7              ; reverse flag
+BLNSW       = $cc              ; cursor blink flag
+BLNCT       = $cd
+BLNON       = $cf
+COLOR       = $286
+SCNMPG      = $288             ; screen memory page for C64 mode
+KEYRPT      = $28a             ; $80 = all, $40 = none, $00 sursor, space
+MODE        = $291
+CINV        = $314             ; kernal vector table
+DSTATUS     = $33c             ; 40 bytes disk status
+SCREEN      = $0800            ; character RAM in 80 column mode
+COLRAM      = $d800            ; color     RAM
+Raster      = $d012
+BorderCol   = $d020
+BackgCol0   = $d021
+Random      = $d41b
+ROM_Vectors = $fd30
+Init_IO     = $fda3
+Init_Editor = $ff5b
+
 
 ; ******
 ; Kernal
@@ -334,7 +340,7 @@ START = $2001   ; *** BASIC ***  C65
           .BYTE $9e       ; SYS  token
           .BYTE "(8253):" ; C65  start
           .BYTE $8f       ; REM  token
-          .BYTE " BIT SHIFTER 30-JUL-20",0
+          .BYTE " BIT SHIFTER 06-AUG-20",0
 Link      .WORD 0         ; BASIC end marker
 
 ; SYS entry for MEGA65 mode
@@ -370,8 +376,6 @@ ReLoop    LDA (A0L),Y
   MEGA_Setup
 ; **********
           sei
-          lda #$36            ; I/O & kernal
-          sta R6510
           lda #0              ; Configure MEGA65 memory
           tax
           tay
@@ -379,12 +383,16 @@ ReLoop    LDA (A0L),Y
           map
           eom
 
+          lda #$36            ; I/O & kernal
+          sta R6510
           lda #65   ; 40 MHz
           sta 0
 
-          jsr $fda3 ; init I/O
-          jsr $fd15 ; set I/O vectors
-          jsr $ff5b ; more init
+          jsr Init_IO
+          jsr Set_Kernal_Vectors
+          lda #$04            ; C64 default value
+          sta SCNMPG          ; set screen memory page
+          jsr Init_Editor
 
           LDA #-1             ; cursor off
           STA BLNSW
@@ -425,6 +433,16 @@ ReLoop    LDA (A0L),Y
           STA $d018
           RTS
 
+; ******************
+  Set_Kernal_Vectors
+; ******************
+
+          LDY #$1F          ; 16 vectors
+KeVE_10   LDA ROM_Vectors,Y
+          STA CINV,Y
+          DEY
+          BPL KeVE_10
+          RTS
 
 ; ====
 ; DATA
@@ -4986,7 +5004,7 @@ EOS       .BYTE "End of session - press any key"
 NOSTORY   .BYTE "NO Z3 STORY"
 
 
-BITSHIFTER .BYTE CLEAR,"BIT SHIFTER 30-JUL-2020\r"
+BITSHIFTER .BYTE CLEAR,"BIT SHIFTER 06-AUG-2020\r"
 InfoClr    .BYTE CR
 InfoPro    .BYTE 'Program: 0001 - 00FF    0 Pages\r'
 InfoSta    .BYTE 'Bank  0: 0000 - 00FF    0 Pages\r'
