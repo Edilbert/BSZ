@@ -1,15 +1,13 @@
-; *************************************
-; * BSZ = Bit Shifter's Z interpreter *
-; *       for MEGA65      06-Aug-2020 *
-; *************************************
+*************************************
+* BSZ = Bit Shifter's Z interpreter *
+*       for MEGA65      02-Sep-2020 *
+*************************************
 
 .CPU 45GS02
 
-ZV     = 3   ; Z machine version
-
-; *********************
-; * Commodore KEY codes
-; *********************
+***********************
+* Commodore KEY codes *
+***********************
 
 KEY_F1   = 133
 KEY_F3   = 134
@@ -20,9 +18,9 @@ KEY_F4   = 138
 KEY_F6   = 139
 KEY_F8   = 140
 
-; *************************
-; * Commodore Color Codes *
-; *************************
+*************************
+* Commodore Color Codes *
+*************************
 
 BLACK    =  0
 WHITE    =  1
@@ -41,9 +39,9 @@ LT_GREEN = 13
 LT_BLUE  = 14
 LT_GREY  = 15
 
-; *************************
-; * display control codes *
-; *************************
+*************************
+* display control codes *
+*************************
 
 BACKSPACE     = $08
 TAB           = $09
@@ -59,115 +57,109 @@ CURSOR_UP     = $91
 REVERSE_OFF   = $92
 CURSOR_LEFT   = $9d
 
-; ********************************************************
-; * Interpreter Zero page variables (occupy BASIC space) *
-; ********************************************************
+********************************************************
+* Interpreter Zero page variables (occupy BASIC space) *
+********************************************************
 
 & = $02
 
 ; Instruction pointer     LDZ QI0  ->  LDA (RAM_LO),Z
 
-Z_Code           .BSS 1 ; current code byte
-QI0              .BSS 1 ; Byte 0  pc = (QI0/QI1/QI2)
-QI1              .BSS 1 ; Byte 1  Floppy block low
-QI2              .BSS 1 ; Byte 2  Floppy block high
+Z_Code         .BSS 1 ; current code byte
+QI0            .BSS 1 ; Byte 0  pc = (QI0/QI1/QI2)
+QI1            .BSS 1 ; Byte 1  Floppy block low
+QI2            .BSS 1 ; Byte 2  Floppy block high
 
 ; Data pointer            LDZ QD0  ->  LDA (RAM_LO),Z
 
-QDL              .BSS 1 ; current packed data low
-QDH              .BSS 1 ; current packed data high
-QD0              .BSS 1 ; Byte 0  pc = (QD0/QD1/QD2)
-QD1              .BSS 1 ; Byte 1  Floppy block low
-QD2              .BSS 1 ; Byte 2  Floppy block high
+QDL            .BSS 1 ; current packed data low
+QDH            .BSS 1 ; current packed data high
+QD0            .BSS 1 ; Byte 0  pc = (QD0/QD1/QD2)
+QD1            .BSS 1 ; Byte 1  Floppy block low
+QD2            .BSS 1 ; Byte 2  Floppy block high
 
 ; keep above variables together (block push/pull)
 
-RAM_LO           .BSS 1 ; RAM address for disk access
-RAM_HI           .BSS 1
-RAM_BA           .BSS 2 ; RAM BANK
+RAM_LO         .BSS 1 ; RAM address for disk access
+RAM_HI         .BSS 1
+RAM_BA         .BSS 2 ; RAM BANK
 
 ; Multi purpose local variables
 
-LV0              .BSS 1
-LV1              .BSS 1
-LV2              .BSS 1
-LV3              .BSS 1
+LV0            .BSS 1
+LV1            .BSS 1
+LV2            .BSS 1
+LV3            .BSS 1
 
-alphabet         .BSS 1
-Block_Lo         .BSS 1
-Block_Hi         .BSS 1
-Charbuf_Ptr      .BSS 1
-Charbuf_End      .BSS 1
-Chars_Left       .BSS 1
-Info_Pages       .BSS 1
-OP_Type          .BSS 2
-ParNum           .BSS 1
-Parse_Index      .BSS 1
-QuotL            .BSS 1
-QuotH            .BSS 1
-RemL             .BSS 1
-RemH             .BSS 1
-Resident_Pages   .BSS 1
-Cols             .BSS 1 ; # of columns
-C_Save_Col       .BSS 1
-C_Save_Row       .BSS 1
-C_Save_Adr       .BSS 2 ; cursor position
-Last_Row         .BSS 1
-Last_Col         .BSS 1
-Status_Col       .BSS 1
-MORE_Counter     .BSS 1
-z_stack_ptr      .BSS 1
-z_frame_ptr      .BSS 1
-NUMBER           .BSS 5
-P0L              .BSS 1 ; Multi purpose pointer
-P0H              .BSS 1
-P1L              .BSS 1 ; Multi purpose pointer
-P1H              .BSS 1
-P2L              .BSS 1 ; Multi purpose pointer
-P2H              .BSS 1
-P3L              .BSS 1 ; Multi purpose pointer
-P3H              .BSS 1
-DPL              .BSS 1 ; dictionary pointer
-DPH              .BSS 1
-DPI              .BSS 1
-A0L              .BSS 1 ; primary   address register
-A0H              .BSS 1
-A1L              .BSS 1 ; secondary address register
-A1H              .BSS 1
-X0L              .BSS 1 ; primary value   register
-X0H              .BSS 1
-X1L              .BSS 1 ; parameter register
-X1H              .BSS 1 ; X1L - X4H must be contiguous
-X2L              .BSS 1
-X2H              .BSS 1
-X3L              .BSS 1
-X3H              .BSS 1
-X4L              .BSS 1
-X4H              .BSS 1
-X5L              .BSS 1
-X5H              .BSS 1
-X6L              .BSS 1
-X6H              .BSS 1
-X7L              .BSS 1
-X7H              .BSS 1
-X8L              .BSS 1
-X8H              .BSS 1
+Alphabet       .BSS 1
+Block_Lo       .BSS 1
+Block_Hi       .BSS 1
+C_Save_Col     .BSS 1 ; save column
+C_Save_Row     .BSS 1 ; save row
+Charbuf_Ptr    .BSS 1
+Charbuf_End    .BSS 1
+Chars_Left     .BSS 1
+Info_Pages     .BSS 1
+MORE_Counter   .BSS 1
+NUMBER         .BSS 5
+OP_Type        .BSS 2
+ParNum         .BSS 1
+Parse_Index    .BSS 1
+Prop_Mask      .BSS 1
+QuotL          .BSS 1
+QuotH          .BSS 1
+RemL           .BSS 1
+RemH           .BSS 1
+Resident_Pages .BSS 1
+Save_Unit      .BSS 1
+Status_Col     .BSS 1
+Upper_Size     .BSS 1 ; rows of upper window
+Version        .BSS 1 ; $80 = version > 3
+Vocab_Length   .BSS 1 ; length of packed vocab
+Win_Top        .BSS 1 ; upper row of active window
+Word_Length    .BSS 1 ; length of dictionary words
+z_stack_ptr    .BSS 1
+z_frame_ptr    .BSS 1
+DPL            .BSS 1 ; dictionary pointer
+DPH            .BSS 1
+DPI            .BSS 1
+A0L            .BSS 1 ; primary   address register
+A0H            .BSS 1
+A1L            .BSS 1 ; secondary address register
+A1H            .BSS 1
+X0L            .BSS 1 ; primary value   register
+X0H            .BSS 1
+X1L            .BSS 1 ; parameter register
+X1H            .BSS 1 ; X1L - X4H must be contiguous
+X2L            .BSS 1
+X2H            .BSS 1
+X3L            .BSS 1
+X3H            .BSS 1
+X4L            .BSS 1
+X4H            .BSS 1
+X5L            .BSS 1
+X5H            .BSS 1
+X6L            .BSS 1
+X6H            .BSS 1
+X7L            .BSS 1
+X7H            .BSS 1
+X8L            .BSS 1
+X8H            .BSS 1
 
-Cursor_Col       .BSS 1
-Cursor_Row       .BSS 1
-Cursor_Vis       .BSS 1
-Scr_Adr          .BSS 2 ; screen RAM 16 bit address
-Col_Adr          .BSS 4 ; colour RAM 32 bit address
+Cursor_Col     .BSS 1
+Cursor_Row     .BSS 1
+Cursor_Vis     .BSS 1
+Scr_Adr        .BSS 2 ; screen RAM 16 bit address
+Z_Mem_Ptr      .BSS 2 ; Z memory pointer
+Col_Adr        .BSS 4 ; colour RAM 32 bit address
+DICT_WORD      .BSS 6 ; packed ZSCII dictionary word
 
-ZP_END           .BSS 1
+ZP_END         .BSS 1
 
-; Kernal variables
 
-Charbuf = $0200
-
-; ********************
-; * system variables *
-; ********************
+********************
+* system variables *
+********************
 
 COLS        =  80
 ROWS        =  25
@@ -183,10 +175,9 @@ RVS         = $c7              ; reverse flag
 BLNSW       = $cc              ; cursor blink flag
 BLNCT       = $cd
 BLNON       = $cf
+Charbuf     = $200
 COLOR       = $286
 SCNMPG      = $288             ; screen memory page for C64 mode
-KEYRPT      = $28a             ; $80 = all, $40 = none, $00 sursor, space
-MODE        = $291
 CINV        = $314             ; kernal vector table
 DSTATUS     = $33c             ; 40 bytes disk status
 SCREEN      = $0800            ; character RAM in 80 column mode
@@ -199,10 +190,9 @@ ROM_Vectors = $fd30
 Init_IO     = $fda3
 Init_Editor = $ff5b
 
-
-; ******
-; Kernal
-; ******
+**********
+* Kernal *
+******** *
 
 SETMSG = $ff90
 SECOND = $ff93
@@ -218,21 +208,22 @@ GETIN  = $ffe4
 PLOT   = $fff0
 RESET  = $fffc
 
-; **********
-; C64 arrays
-; **********
+************
+* Z arrays *
+************
 
-Z_VAR       = [EOP + $ff] & $ff00 ;
-Z_STACK_LO  = Z_VAR      + $100 ; keep this area together
+Z_STATUS    = $1f00               ; version 3
+Z_VAR       = [EOP + $ff] & $ff00
+Z_STACK_LO  = Z_VAR      + $100   ; keep this area together
 Z_STACK_HI  = Z_STACK_LO + $100
 Z_HEADER    = Z_STACK_HI + $100
-Filename    = Z_STACK_LO
 Lvar_Lo     = Z_VAR
 Lvar_Hi     = Z_VAR + $10
 
-; ************
-; STORY HEADER
-; ************
+
+****************
+* STORY HEADER *
+****************
 
 h_version             = Z_HEADER
 h_config              = Z_HEADER +   1
@@ -274,27 +265,12 @@ h_strings_offset_lo   = Z_HEADER +  43
 h_default_bg_color    = Z_HEADER +  44
 h_default_fg_color    = Z_HEADER +  45
 
-h_alphabet_hi         = Z_HEADER +  52
-h_alphabet_lo         = Z_HEADER +  53
+h_Alphabet_hi         = Z_HEADER +  52
+h_Alphabet_lo         = Z_HEADER +  53
 
-; *******************
-; Z machine constants
-; *******************
-
-
-   O_PARENT     =   4
-   O_SIBLING    =   5
-   O_CHILD      =   6
-   O_PROP       =   7
-   O_SIZE       =   9
-   P_MASK       = $1f
-   V_SIZE       =   4
-   WORD_LENGTH  =   6
-   Store_Object = Store_Byte
-
-; ***********
-; Print Macro
-; ***********
+***************
+* Print Macro *
+***************
 
 MACRO Print(lab)
           LDA #<lab
@@ -318,11 +294,11 @@ START = $2001   ; *** BASIC ***  C65
 * = START
 
           .LOAD START
-          .STORE START,EOP-START,"z3-mega65"
+          .STORE START,EOP-START,"bsz-mega65"
 
-; ************
-; basic_header
-; ************
+****************
+* BASIC header *
+****************
 
           .WORD Link
           .WORD 2020      ; line number
@@ -340,7 +316,7 @@ START = $2001   ; *** BASIC ***  C65
           .BYTE $9e       ; SYS  token
           .BYTE "(8253):" ; C65  start
           .BYTE $8f       ; REM  token
-          .BYTE " BIT SHIFTER 06-AUG-20",0
+          .BYTE " BIT SHIFTER 02-SEP-20",0
 Link      .WORD 0         ; BASIC end marker
 
 ; SYS entry for MEGA65 mode
@@ -372,27 +348,28 @@ ReLoop    LDA (A0L),Y
           JMP MEGA_Setup
 
 
-; **********
-  MEGA_Setup
-; **********
-          sei
-          lda #0              ; Configure MEGA65 memory
-          tax
-          tay
-          taz
-          map
-          eom
+*****************
+Module MEGA_Setup
+*****************
 
-          lda #$36            ; I/O & kernal
-          sta R6510
-          lda #65   ; 40 MHz
-          sta 0
+          SEI
+          LDA #0              ; Configure MEGA65 memory
+          TAX
+          TAY
+          TAZ
+          MAP
+          EOM
 
-          jsr Init_IO
-          jsr Set_Kernal_Vectors
-          lda #$04            ; C64 default value
-          sta SCNMPG          ; set screen memory page
-          jsr Init_Editor
+          LDA #$36            ; I/O & kernal
+          STA R6510
+          LDA #65   ; 40 MHz
+          STA 0
+
+          JSR Init_IO
+          JSR Set_Kernal_Vectors
+          LDA #$04            ; C64 default value
+          STA SCNMPG          ; set screen memory page
+          JSR Init_Editor
 
           LDA #-1             ; cursor off
           STA BLNSW
@@ -414,437 +391,50 @@ ReLoop    LDA (A0L),Y
           JSR Clear_Screen
           JSR SETMSG          ; disable kernal messages
           JMP z_restart
+EndMod
 
+******************
+Module Set_Mode_80
+******************
 
-; ***********
-  Set_Mode_80
-; ***********
+*         make VIC IV registers visible
+*         by using the knock sequence $47 $53
 
-;         make VIC IV registers visible
-
-          lda #$47
-          sta $d02f
-          lda #$53
-          sta $d02f
+          LDA #$47
+          STA $d02f
+          LDA #$53
+          STA $d02f
 
           LDA #$c0           ; 80 columns, fast
           STA $d031
           LDA #$26           ; SCR = $0800,  CB = $0C00
           STA $d018
           RTS
+EndMod
 
-; ******************
-  Set_Kernal_Vectors
-; ******************
+*************************
+Module Set_Kernal_Vectors
+*************************
 
           LDY #$1F          ; 16 vectors
-KeVE_10   LDA ROM_Vectors,Y
+_loop     LDA ROM_Vectors,Y
           STA CINV,Y
           DEY
-          BPL KeVE_10
+          BPL _loop
           RTS
+EndMod
 
-; ====
-; DATA
-; ====
+**************
+Module PC_LOOP
+**************
 
-Row_Lo    .BYTE <[SCREEN]
-          .BYTE <[SCREEN +  1 * COLS]
-          .BYTE <[SCREEN +  2 * COLS]
-          .BYTE <[SCREEN +  3 * COLS]
-          .BYTE <[SCREEN +  4 * COLS]
-          .BYTE <[SCREEN +  5 * COLS]
-          .BYTE <[SCREEN +  6 * COLS]
-          .BYTE <[SCREEN +  7 * COLS]
-          .BYTE <[SCREEN +  8 * COLS]
-          .BYTE <[SCREEN +  9 * COLS]
-          .BYTE <[SCREEN + 10 * COLS]
-          .BYTE <[SCREEN + 11 * COLS]
-          .BYTE <[SCREEN + 12 * COLS]
-          .BYTE <[SCREEN + 13 * COLS]
-          .BYTE <[SCREEN + 14 * COLS]
-          .BYTE <[SCREEN + 15 * COLS]
-          .BYTE <[SCREEN + 16 * COLS]
-          .BYTE <[SCREEN + 17 * COLS]
-          .BYTE <[SCREEN + 18 * COLS]
-          .BYTE <[SCREEN + 19 * COLS]
-          .BYTE <[SCREEN + 20 * COLS]
-          .BYTE <[SCREEN + 21 * COLS]
-          .BYTE <[SCREEN + 22 * COLS]
-          .BYTE <[SCREEN + 23 * COLS]
-          .BYTE <[SCREEN + 24 * COLS]
-
-Row_Hi    .BYTE >[SCREEN]
-          .BYTE >[SCREEN +  1 * COLS]
-          .BYTE >[SCREEN +  2 * COLS]
-          .BYTE >[SCREEN +  3 * COLS]
-          .BYTE >[SCREEN +  4 * COLS]
-          .BYTE >[SCREEN +  5 * COLS]
-          .BYTE >[SCREEN +  6 * COLS]
-          .BYTE >[SCREEN +  7 * COLS]
-          .BYTE >[SCREEN +  8 * COLS]
-          .BYTE >[SCREEN +  9 * COLS]
-          .BYTE >[SCREEN + 10 * COLS]
-          .BYTE >[SCREEN + 11 * COLS]
-          .BYTE >[SCREEN + 12 * COLS]
-          .BYTE >[SCREEN + 13 * COLS]
-          .BYTE >[SCREEN + 14 * COLS]
-          .BYTE >[SCREEN + 15 * COLS]
-          .BYTE >[SCREEN + 16 * COLS]
-          .BYTE >[SCREEN + 17 * COLS]
-          .BYTE >[SCREEN + 18 * COLS]
-          .BYTE >[SCREEN + 19 * COLS]
-          .BYTE >[SCREEN + 20 * COLS]
-          .BYTE >[SCREEN + 21 * COLS]
-          .BYTE >[SCREEN + 22 * COLS]
-          .BYTE >[SCREEN + 23 * COLS]
-          .BYTE >[SCREEN + 24 * COLS]
-
-Z_STATUS    .FILL 90 (0)
-L_Encode_A  .BYTE 0 ;
-L_Encode_Y  .BYTE 0 ;
-
-; data for separators / delimiters in parsing
-
-Sep_Std_List    .BYTE "!?,.\r " ; built in standard
-Z_Arg_Count     .BYTE 0 ; argument count
-Z_Buffer_Mode   .BYTE 1 ; output buffering on or off
-Z_Call_Type     .BYTE 0 ; type of subroutine call
-Z_Monospace     .BYTE 0
-Z_Underline     .BYTE 0
-Z_Active_Window .BYTE 0
-
-Z_Upper_Size    .BYTE 1 ; upper window size
-
-
-Z_Copy          .FILL RAM_HI - Z_Code + 1 (0)
-Breakpoint      .BYTE 1
-
-
-; ==========================
-; Cursor, Windows and Screen
-; ==========================
-
-; ******************
-  Set_Screen_Pointer
-; ******************
-
-          LDX Cursor_Row
-
-; ********************
-  Set_Screen_Pointer_X
-; ********************
-
-          LDA Row_Lo,X
-          STA Scr_Adr
-          STA Col_Adr
-          LDA Row_Hi,X
-          STA Scr_Adr+1
-          AND #7
-          STA Col_Adr+1
-          RTS
-
-
-; ***********
-  Window_Home
-; ***********
-
-; set cursor to top left position of window
-
-          LDX Z_Upper_Size
-          LDY #0
-
-; ***********
-  Set_Row_Col
-; ***********
-
-; Input : X = screen row    (0 .. 24)
-;         Y = screen column (0 .. 79)
-
-          CPX #ROWS
-          BCC SRC_10
-          LDX #ROWS-1
-SRC_10    CPY Cols
-          BCC SRC_20
-          LDY Last_Col
-
-SRC_20    STX Cursor_Row
-          STY Cursor_Col
-          JSR Set_Screen_Pointer
-
-; ***********
-  Get_Row_Col
-; ***********
-
-; Output: X = screen row    (0 .. 24)
-;         Y = screen column (0 .. 79)
-
-          LDX Cursor_Row
-          LDY Cursor_Col
-          RTS
-
-; **********
-  Info_Print
-; **********
-
-; Input: (X) = First page, (A) = Last page, (Y) = print pos
-;----------------------------------------------------------
-
-          PHA
-          TXA
-          JSR ASCII_Hex
-          STA InfoPro + 10,Y
-          TXA
-          STA InfoPro +  9,Y
-          PLA
-          JSR ASCII_Hex
-          STA InfoPro + 17,Y
-          TXA
-          STA InfoPro + 16,Y
-          LDA #0
-          STA X0H
-          LDA Info_Pages
-          STA X0L
-
-; *********
-  Info_Size
-; *********
-          TYA
-          PHA
-          JSR Format_Integer
-          PLA
-          TAY
-          LDX #1
-InSi_10   LDA NUMBER,X
-          STA InfoPro+21,Y
-          INY
-          INX
-          CPX #5
-          BCC InSi_10
-          RTS
-
-; ************
-  Screen_Setup
-; ************
-
-          LDA #$0F       ; colour RAM: $FF80000
-          STA Col_Adr+3
-          LDA #$F8
-          STA Col_Adr+2
-          LDY #COLS
-          STY Cols
-          DEY
-          STY Last_Col   ; Cols - 1 for comparisons
-
-; ***************
-  Set_Screen_Rows
-; ***************
-
-          SEC
-          LDA #ROWS-1    ; Last line
-          STA Last_Row
-          RTS
-
-; ***********
-  Story_Pages
-; ***********
-
-; Leave story size in X0L/X0H for printing
-
-          LDA #0
-          STA X0H
-          LDA h_file_size_hi    ; size in words high
-          STA X0L
-          LDA h_file_size_lo    ; size in words low
-          ASL A
-          ROL X0L
-          ROL X0H               ; size * 2
-          CMP #0
-          BEQ STTS_10           ; at page boundary
-          INC X0L               ; add 1 to round up
-          BNE STTS_10
-          INC X0H
-STTS_10   RTS
-
-
-; *********
-  z_restart
-; *********
-
-          CLD
-          LDX #$fb       ; Commodore default stack initialisation
-          TXS
-          LDA #0         ; clear ZP variables
-          LDX #Z_Code    ; start of interpreter variables
-Start_10  STA 0,X
-          INX
-          CPX #ZP_END
-          BCC Start_10
-          LDA #0
-          TAX
-          JSR Screen_Setup
-          INC z_stack_ptr      ;  1
-          INC z_frame_ptr      ;  1
-          DEC Status_Col       ; -1
-          JSR Open_Story       ; open  8,8,8,"z3*"
-          LDA #>Z_HEADER
-          STA RAM_HI
-          JSR Load_Page       ; load first block to Z_HEADER
-          LDA h_version
-          CMP #ZV
-          BEQ Start_20
-          Print(NOSTORY)
-          JMP quit_20
-Start_20
-
-; =================
-; Set Memory Layout
-; =================
-
-          LDX #>[$D000 - Z_HEADER]
-          STX Resident_Pages  ; reserved
-          LDX #COLS
-          STX h_screen_cols
-
-          LDA h_config
-          ORA #%0011 0001     ; fixed font / colours
-;               0--- ---- 7:timed input
-;                 1- ---- 5:split screen
-;                  1 ---- 4:fixed  font
-;                    0--- 3:italic font
-;                     0-- 2:bold   font
-;                      0- 1:pictures
-;                       1 0:colors
-          STA h_config
-          LDA #%0000 1100
-          ORA h_flags_lo
-          STA h_flags_lo
-          LDA #0
-          STA h_screen_width_hi
-          STA h_screen_height_hi
-          LDA #COLS
-          STA h_screen_width_lo
-          LDA #ROWS-1
-          STA h_screen_height_lo
-          LDA #1
-          STA h_font_width
-          STA h_font_height
-          LDA #8              ; 6:PC 7:C128 8:C64
-          STA h_interpreter_number
-          LDA #'G'
-          STA h_interpreter_version
-
-          LDY #COLS
-          STY Cols
-          DEY
-          STY Last_Col
-
-; -------- compute story location and size -----
-
-          LDA #>EOP - >START+1 ; program
-          STA Info_Pages
-          LDX #>START
-          LDA #>EOP
-          LDY #0
-          JSR Info_Print
-          LDA Resident_Pages ; static
-          STA Info_Pages
-          CLC
-          ADC #>Z_HEADER-1
-          LDX #>Z_HEADER
-          LDY #InfoSta-InfoPro
-          JSR Info_Print
-          JSR Story_Pages
-          LDY #InfoSto-InfoPro
-          JSR Info_Size
-          Print(BITSHIFTER)
-          JSR Select_Text_Window
-          LDA #<InfoClr
-          LDY #>InfoClr
-          LDX #[InfoEnd - InfoClr]
-          JSR PrintText
-
-Start_30  JSR Load_Page       ; Load resident area
-          LDA IO_STATUS
-          BNE Start_50        ; EOF
-          LDA Block_Lo
-          AND #7
-          BNE Start_40
-          LDA #'.'
-          JSR CHROUT
-Start_40  LDA Block_Lo
-          CMP Resident_Pages
-          BCC Start_30
-
-Start_50  JSR Load_Story
-          JSR Wait_for_Return
-          JSR Set_Mode_80
-          LDA h_start_pc_hi   ; Initialize pc
-          STA QI1
-          LDA h_start_pc_lo
-          STA QI0
-          JSR Reset_Screen
-
-; *******
-  PC_LOOP
-; *******
-
-; read next instruction byte from Z-program counter
-; read optional operand bytes and call operator subroutine
-
-
-; ----------
-; Debug Code
-; ----------
-
-;          LDX #0
-;PC_10     LDA Z_Code,X
-;          STA Z_Copy,X
-;          INX
-;          CPX #RAM_HI - Z_Code + 1
-;          BCC PC_10
-
-; ------------------
-; Breakpoint Handler
-; ------------------
-
-;          LDA QI0
-;          CMP #$ce
-;          BNE PC_30
-;          LDA QI1
-;          CMP #$b2
-;          BNE PC_30
-;          LDA QI2
-;          CMP #$02
-;          BNE PC_30
-;          DEC Breakpoint
-;          BNE PC_30
-;          BRK
- PC_30
+* read next instruction byte from Z-program counter
+* read optional operand bytes and call operator subroutine
 
           LDA #0
           STA ParNum           ; reset # of operands
           JSR Next_Instruction
           STA Z_Code           ; remember op code
-; ------
-; Tracer
-; ------
-;          LDA #14
-;          JSR CHROUT
-;          LDX DumpQI
-;          BEQ BZ_10
-;          CMP #$0d
-;          BEQ BZ_10
-;          LDA #'+'
-;          JSR CHROUT
-;          LDA Z_Code
-;          JSR ASCII_Hex
-;          PHA
-;          TXA
-;          JSR CHROUT
-;          PLA
-;          JSR CHROUT
-;BZ_10     LDA Z_Code
 
           BPL z_op_two         ; [$00 - $7f] -> codes with  2 operands
           CMP #$b0
@@ -854,17 +444,19 @@ Start_50  JSR Load_Story
 
           JSR Next_Instruction ; [$c0 - $ff] -> codes with 0-4 operands
 
-; ********
-  z_op_var
-; ********
-
-; max 4 operands (11223344)
-; ----------------------------
+; max 4 operands (11223344) for version 3
+;  or 8 operands for version > 3
+; ---------------------------------------
 ; 00 = 16 bit constant
 ; 01 =  8 bit constant
 ; 10 = 16 bit variable
 ; 11 = no operand (end marker)
 
+          LDX Z_Code
+          CPX #$fa            ; call with 8 arguments
+          BNE opvar_10
+          JSR Load_8_Operands
+          JMP opvar_20
 opvar_10  JSR Load_4_Operands
 opvar_20  LDA Z_Code
           CMP #$e0
@@ -874,19 +466,18 @@ opvar_20  LDA Z_Code
           ADC #[opcodes_var - z_opcode] >> 1
           BNE z_execute       ; always
 
-; *********
-  z_op_zero
-; *********
+*********
+z_op_zero
+*********
 
 ; opcodes with no operand, opcode = $b0 - $bf
 
-          SEC
-          SBC #$b0 - [[opcodes_0op - z_opcode] >> 1]
+          SBC #$af - [[opcodes_0op - z_opcode] >> 1] ; carry is clear
           BNE z_execute       ; always
 
-; ********
-  z_op_one
-; ********
+********
+z_op_one
+********
 
 ; opcode = 10tt cccc  opcodes with 1 operand
 ;     tt = 00 : 16 bit constant $8x
@@ -902,9 +493,9 @@ opvar_20  LDA Z_Code
           ADC #[opcodes_1op - z_opcode] >> 1
           BNE z_execute
 
-; ********
-  z_op_two
-; ********
+********
+z_op_two
+********
 
 ; opcode = 0fsc cccc  opcodes with 2 operands
 ;      f = 0 : 1st. op = short constant
@@ -924,9 +515,9 @@ opvar_20  LDA Z_Code
           LDA Z_Code
 z_exe_1f  AND #$1f            ; fall through
 
-; *********
-  z_execute
-; *********
+*********
+z_execute
+*********
 
 ; Input : A = index to opcode table
 
@@ -938,16 +529,14 @@ z_exe_1f  AND #$1f            ; fall through
           STA JSRMOD+2
 JSRMOD    JSR $ffff
           JMP PC_LOOP
-
-DumpQI    .BYTE 0
+EndMod
 
 z_error_2 ERROR(2)
-z_error_3 ERROR(3)
 z_error_4 ERROR(4)
 
-; ********
-  z_opcode
-; ********
+********
+z_opcode
+********
 
 ; $00-$1f : byte const + short const
 ; $20-$3f : byte const + variable
@@ -1011,7 +600,7 @@ z_error_4 ERROR(4)
           .WORD z_jump          ; 8c 9c ac
           .WORD z_print_paddr   ; 8d 9d ad
           .WORD z_load          ; 8e 9e ae
-          .WORD z_not           ; 8f 9f af
+ZV8F      .WORD z_call_n        ; 8f 9f af  V3 = z_not
 
 ; ***********
   opcodes_0op
@@ -1026,7 +615,7 @@ z_error_4 ERROR(4)
           .WORD z_restore       ; b6
           .WORD z_restart       ; b7
           .WORD z_ret_popped    ; b8
-          .WORD z_pop           ; b9
+ZVB9      .WORD z_catch         ; b9 V3 = z_pop
           .WORD z_quit          ; ba
           .WORD z_new_line      ; bb
           .WORD z_show_status   ; bc
@@ -1077,6 +666,36 @@ z_error_1 ERROR(1)
   opcodes_ext
 ; ***********
 
+          .WORD z_ext_save       ; 00
+          .WORD z_ext_restore    ; 01
+          .WORD z_log_shift      ; 02
+          .WORD z_error12        ; 03 z_art_shift,
+          .WORD z_set_font       ; 04
+          .WORD z_error12        ; 05 z_draw_picture,
+          .WORD z_error12        ; 06 z_picture_data,
+          .WORD z_error12        ; 07 z_erase_picture,
+          .WORD z_error12        ; 08 z_set_margins,
+          .WORD z_save_undo      ; 09
+
+;    0a z_restore_undo,
+;    0b z_print_unicode,
+;    0c z_check_unicode,
+;    0d __illegal__,
+;    0e __illegal__,
+;    0f __illegal__,
+;    10 z_move_window,
+;    11 z_window_size,
+;    12 z_window_style,
+;    13 z_get_wind_prop,
+;    14 z_scroll_window,
+;    15 z_pop_stack,
+;    16 z_read_mouse,
+;    17 z_mouse_window,
+;    18 z_push_stack,
+;    19 z_put_wind_prop,
+;    1a z_print_form,
+;    1b z_make_menu,
+;    1c z_picture_table
 
 
 ; ***********
@@ -1138,6 +757,33 @@ geop_04   RTS
 L4OP_20   LDA Z_Code
           RTS
 
+; ***************
+  Load_8_Operands
+; ***************
+
+; max 8 operands (2 type bits)
+; ----------------------------
+; 00 = 16 bit constant
+; 01 =  8 bit constant
+; 10 = 16 bit variable
+; 11 = no operand (end marker)
+
+          PHA                  ; 1st. type byte
+          JSR Next_Instruction ; 2nd. type byte
+          STA OP_Type+1
+          PLA
+L8OP_10   JSR Get_Operand
+          BVS L8OP_20         ; V=1 -> end of args
+          LDA OP_Type
+          ASL OP_Type+1
+          ROL A
+          ASL OP_Type+1
+          ROL A
+          LDX ParNum
+          CPX #8
+          BCC L8OP_10
+L8OP_20   LDA Z_Code
+          RTS
 
 ; ***********
   Get_Var_X1L
@@ -1209,6 +855,7 @@ GeVa_10   CMP #16
           INC z_stack_ptr
           BEQ z_error_6
           RTS
+
 z_error_6 ERROR(6)
 
 ; **********
@@ -1502,28 +1149,16 @@ z_error_5 ERROR(5)
 ; ********************************
 
           JSR Save_Config
-
-; leave a copy of ZP in page $E000
-
-          LDX #2
-quit_10   LDA 0,X
-          STA $E000,X
-          INX
-          BNE quit_10
-
           Print(EOS)
 
 quit_20   JSR GETIN           ; entry for early quit
           BEQ quit_20
-          CMP #'M'            ; M -> BRK into monitor
-          BNE quit_30
-          BRK
-quit_30   JMP (RESET)
+          JMP (RESET)
 
 ; *******
   z_catch
 ; *******
-          BRK                 ; not implemented
+          RTS                 ; not implemented
 
 ; ********************************
   z_jz          ; op1 opcode # $00
@@ -1535,52 +1170,59 @@ quit_30   JMP (RESET)
           JMP Main_False
 z_jz_t    JMP Main_True
 
-; ********************************
-  z_get_sibling ; op1 opcode # $01
-; ********************************
+***************************************
+Module z_get_sibling ; op1 opcode # $01
+***************************************
 
-          LDY #O_SIBLING      ; Y =  8
-          BNE zg_chi_1
+          LDY #5              ; version = 3 sibling
+          BIT Version
+          BPL zg_chi_1
+          LDY #8              ; version > 3 sibling
+          BRA zg_chi_1
 
-; ********************************
-  z_get_child   ; op1 opcode # $02
-; ********************************
+***************************************
+Module z_get_child   ; op1 opcode # $02
+***************************************
 
-          LDY #O_CHILD        ; Y = 10
+          LDY #6              ; version = 3 child
+          BIT Version
+          BPL zg_chi_1
+          LDY #10             ; version > 3 child
 zg_chi_1  JSR Get_Object_X1   ; X1 object's address -> A0
-          JSR Store_Object    ; (A/X) -> (X0) -> Store
+          JSR Store_AX        ; (A/X) -> (X0) -> Store
           LDA X0L
+          ORA X0H
           BEQ zg_chi_f
           JMP Main_True       ; there is an object
 zg_chi_f  JMP Main_False      ; there is no object
+EndMod
 
-; *********************************
-  z_get_parent   ; op1 opcode # $03
-; *********************************
+****************************************
+Module z_get_parent   ; op1 opcode # $03
+****************************************
 
-          LDY #O_PARENT
-          JSR Get_Object_X1   ; (A/X) = parent object
-          JMP Store_Object
+          LDY #4              ; version = 3 parent
+          BIT Version
+          BPL _get
+          LDY #6              ; version > 3 parent
+_get      JSR Get_Object_X1   ; (A/X) = parent object
+          JMP Store_AX
+EndMod
 
 ; *********************************
   z_inc          ; op1 opcode # $05
 ; *********************************
 
           JSR Get_Var_X1L
-          INC X0L
-          BNE z_inc_1
-          INC X0H
-z_inc_1   JMP Put_Var
+          INW X0L
+          JMP Put_Var
 
 ; *********************************
   z_dec          ; op1 opcode # $06
 ; *********************************
 
           JSR Get_Var_X1L
-          LDA X0L
-          BNE z_dec_1
-          DEC X0H
-z_dec_1   DEC X0L
+          DEW X0L
           JMP Put_Var
 
 ; *********************************
@@ -1591,68 +1233,139 @@ z_dec_1   DEC X0L
           LDX X1H
           JMP Decode_YX
 
-; *********************************
-  z_remove_obj   ; op1 opcode # $09
-; *********************************
+****************************************
+Module z_remove_obj   ; op1 opcode # $09
+****************************************
 
 ; Remove (unlink) object (X1)
 
+          BIT Version
+          BPL _V3
 
-          LDY #O_PARENT
+          LDY #6              ; parent offset
+          JSR Get_Object_X1   ; object's address -> A0
+          LDA A0L             ; object's address -> A1
+          STA A1L
+          LDA A0H
+          STA A1H
+          TXA                 ; parent high
+          ORA (A0L),Y         ; parent low
+          BEQ _ret40          ; return if no parent
+
+; Get parent's 1st. child
+
+          LDA (A0L),Y         ; parent low (X = high)
+          LDY #10             ; child offset
+          JSR Get_Object_Reg  ; parent's address -> A0
+          CMP X1L             ; object == parent's 1st. Child ?
+          BNE _ro_10          ; -> no
+          CPX X1H             ; object == parent's 1st. Child ?
+          BNE _ro_10          ; -> no
+
+; Parent's 1st. child is this object, so
+; make object's sibling the 1st. child of parent
+
+          LDY #8              ; sibling offset
+          LDA (A1L),Y         ; object's sibling high
+          INY
+          INY                 ; Y = 10
+          STA (A0L),Y         ; parent's child high
+          DEY                 ; Y =  9
+          LDA (A1L),Y         ; object's sibling low
+          INY
+          INY                 ; Y = 11
+          STA (A0L),Y         ; parent's child low
+          BNE _ro_20          ; always (INY)
+
+; Parent's 1st. child is not this object
+; Loop through siblings until found
+
+_ro_10    LDY #8              ; sibling offset
+          JSR Get_Object_Reg  ; parent's child -> A0
+          CMP X1L             ; object == parent's child's sibling ?
+          BNE _ro_10          ; -> no
+          CPX X1H             ; object == parent's child's sibling ?
+          BNE _ro_10          ; -> no, try next sibling (A/X)
+
+; Link younger sibling to older sibling
+
+          LDA (A1L),Y         ; younger sibling low
+          STA (A0L),Y         ; older   sibling low
+          DEY                 ; Y = 8
+          LDA (A1L),Y         ; younger sibling high
+          STA (A0L),Y         ; older   sibling high
+
+; clear object's parent & sibling (Y=6 .. 9)
+
+_ro_20    LDA #0
+          LDY #6              ; parent offset
+_ro_30    STA (A1L),Y         ; clear parent & sibling
+          INY
+          CPY #10             ; after sibling
+          BCC _ro_30
+_ret40    RTS
+
+_V3       LDY #4              ; parent offset
           JSR Get_Object_X1
           LDA A0L
           STA A1L
           LDA A0H
           STA A1H
           LDA (A0L),Y         ; A = parent object
-          BEQ zro_30          ; -> has no parent
-          LDY #O_CHILD
+          BEQ _ret70          ; -> has no parent
+          LDY #6              ; child offset
           JSR Get_Object_Reg  ; A = child of parent
           CMP X1L             ; is it me ?
-          BNE zro_10          ; -> no
-          LDY #O_SIBLING
+          BNE _ro_50          ; -> no
+          LDY #5              ; sibling offset
           LDA (A1L),Y         ; my sibling
-          INY                 ; Y = O_CHILD
+          INY                 ; Y = child offset
           STA (A0L),Y         ; is parent's cild
-          BNE zro_20          ; always
+          BNE _ro_60          ; always
 
-zro_10    LDY #O_SIBLING      ; A = sibling of parnent's
+_ro_50    LDY #5              ; A = sibling of parnent's
           JSR Get_Object_Reg  ; child
           CMP X1L             ; me ?
-          BNE zro_10          ; -> no
-          LDY #O_SIBLING
+          BNE _ro_50          ; -> no
+          LDY #5              ; sibling offset
           LDA (A1L),Y         ; my sibling is
           STA (A0L),Y         ; parent's child sibling
 
-zro_20    LDA #0
-          LDY #O_PARENT
+_ro_60    LDA #0
+          LDY #4              ; parent offset
           STA (A1L),Y         ; I have no parnet
-          INY                 ; Y = O_SIBLING
+          INY                 ; Y = sibling offset
           STA (A1L),Y         ; I have no sibling
-zro_30    RTS
+_ret70    RTS
+EndMod
 
-; *********************************
-  z_print_obj    ; op1 opcode # $0a
-; *********************************
+****************************************
+Module z_print_obj    ; op1 opcode # $0a
+****************************************
 
           LDA X1L
           LDX X1H
 
-; *************
-  z_print_obj_A
-; *************
+*************
+z_print_obj_A
+*************
 
-          LDY #O_PROP
-          JSR Get_Object_Reg
+          LDY #12             ; version > 3 offset
+          BIT Version
+          BMI _prio_1
+          LDY #7              ; version = 3 offset
+_prio_1   JSR Get_Object_Reg
+          BIT Version
+          BMI _V4
           TAX                 ; object prop high
           INY
           LDA (A0L),Y
-          TAY                 ; object prop low
+_V4       TAY                 ; object prop low
           INY
-          BNE zpo_10
-          INX
-zpo_10    JMP Decode_YX
-          .SIZE
+          BNE _decode
+          INX                 ; object prop high
+_decode   JMP Decode_YX
+EndMod
 
 ; *****************************
   z_ret          ; opcode # $ab
@@ -1699,9 +1412,9 @@ zret_30   RTS
           LDX X1H
           JMP Branch_XA
 
-; *********************************
-  z_print_paddr  ; op1 opcode # $0d
-; *********************************
+****************************************
+Module z_print_paddr  ; op1 opcode # $0d
+****************************************
 
           LDA X1L
           ASL A
@@ -1712,7 +1425,13 @@ zret_30   RTS
           LDA #0
           ROL A
           STA QD2
-          JMP Decode_Text
+          BIT Version
+          BPL _label
+          ASL QD0
+          ROL QD1
+          ROL QD2
+_label    JMP Decode_Text
+EndMod
 
 ; *********************************
   z_load         ; op1 opcode # $0e
@@ -1840,16 +1559,22 @@ cmpax_1   LDA X0H
           CMP A0L
 cmpax_2   RTS
 
-; *********************************
-  z_jin          ; var opcode # $06
-; *********************************
+****************************************
+Module z_jin          ; var opcode # $06
+****************************************
 
-          LDY #O_PARENT
-          JSR Get_Object_X1
+          LDY #4              ; version = 3 parent
+          BIT Version
+          BPL _get
+          LDY #6              ; version > 3 parent
+_get      JSR Get_Object_X1
+          CPX X2H
+          BNE _false
           CMP X2L
-          BNE z_jin_f
+          BNE _false
           JMP Main_True
-z_jin_f   JMP Main_False
+_false    JMP Main_False
+EndMod
 
 ; *********************************
   z_test         ; var opcode # $07
@@ -1924,27 +1649,60 @@ z_teat_t  JMP Main_True
           JSR X2_TO_X0
           JMP Put_Var
 
-; *********************************
-  z_insert_obj   ; var opcode # $0e
-; *********************************
+****************************************
+Module z_insert_obj   ; var opcode # $0e
+****************************************
 
 ; insert object (X1) as 1st. child of object (X2)
 
+          JSR z_remove_obj    ; unlink object (X1)
 
-          JSR z_remove_obj    ; (A1) = object address
+          BIT Version
+          BPL _V3
+
+          LDY #6              ; parent offset
+          LDA X2H
+          STA (A1L),Y         ; X1's parent = X2 high
+          TAX
+          INY                 ; Y = 7
           LDA X2L
-          LDY #O_PARENT
+          STA (A1L),Y         ; X1's parent = X2 high
+
+          LDY #10             ; child offset
+          JSR Get_Object_Reg  ; X2 object's address -> A0
+          STA LV0             ; old child of X2 low
+          LDA X1L             ; Y = 11
+          STA (A0L),Y         ; new child low  = X1L
+          DEY                 ; Y = 10
+          LDA X1H
+          STA (A0L),Y         ; new child high = X1H
+
+          TXA                 ; X2's old child high
+          ORA LV0             ; X2's old child low
+          BEQ _return         ; -> old child was zero
+
+          DEY                 ; Y =  9
+          LDA LV0             ; X2's old child   low
+          STA (A1L),Y         ; X1's new sibling low
+          DEY                 ; Y =  8
+          TXA                 ; X2's old child   high
+          STA (A1L),Y         ; X1's new sibling high
+          RTS
+
+_V3       LDA X2L
+          LDY #4              ; parent offset
           STA (A1L),Y         ; object's new parent
-          LDY #O_CHILD
+          LDY #6              ; child offset
           JSR Get_Object_Reg  ; get new parent's child
           TAX                 ; X = parent's first child
           LDA X1L
           STA (A0L),Y         ; object becomes parent's first child
           TXA
-          BEQ zinob_1         ; parent had no child before
-          LDY #O_SIBLING
+          BEQ _return         ; parent had no child before
+          LDY #5              ; sibling offset
           STA (A1L),Y         ; old child becommes sibling
-zinob_1   RTS
+_return   RTS
+EndMod
 
 ; *********************************
   z_loadw        ; var opcode # $0f
@@ -2059,9 +1817,9 @@ zgnp_10   JSR Find_Property
 zgnp_20   JMP Store_Zero
           .SIZE
 
-; *********************************
-  z_get_prop_len ; opcodes 84 94 a4
-; *********************************
+****************************************
+Module z_get_prop_len ; opcodes 84 94 a4
+****************************************
 
 ; get length of property, which address is in X1
 ; The length info is stored one byte before (X1)
@@ -2072,35 +1830,24 @@ zgnp_20   JMP Store_Zero
           STA A0L
           LDA X1H
           ADC #>[Z_HEADER-1]
-          STA A0H             ; (A0) = (X1) - 1 + Header
+          STA A0H             ; (A0) = (X1) + Header - 1
           LDY #0
-
-          JSR Property_Size
-          CLC
-          ADC #1
+          BIT Version
+          BPL _V3
+          LDA (A0L),Y
+          BMI _mask           ; -> length = lower 6 bits
+          ASL A               ; bit 7 = length info
+          ASL A               ; carry = length info
+          TYA                 ; A = 0
+          ADC #1              ; A = 1 or 2
+_mask     AND #$3f            ; version > 3 mask
           JMP Store_Byte
 
-; *******
-  Dump_QI
-; *******
-          LDA #'['
-          JSR CHROUT
-          LDA Z_Code
-          JSR Dump_Byte
-          LDA #':'
-          JSR CHROUT
-          LDA QI0
-          JSR Dump_Byte
-          LDA QI1
-          JSR Dump_Byte
-          LDA #':'
-          JSR CHROUT
-          LDA QI2
-          JSR Dump_Byte
-          LDA #']'
-          JSR CHROUT
-          LDA #' '
-          JMP CHROUT
+_V3       JSR Property_Size
+          INC A
+          JMP Store_Byte
+EndMod
+
 
 ; *********************************
   z_add          ; var opcode # $14
@@ -2253,7 +2000,7 @@ DiUn_02   DEX
           LDA LV1
           STA RemH
           RTS
-z_error_8 BRK   ; ERROR(8)  ; Divide by zero
+z_error_8 ERROR(8)  ; Divide by zero
 
 ; *************
   Prep_Mult_Div
@@ -2266,49 +2013,293 @@ z_error_8 BRK   ; ERROR(8)  ; Divide by zero
           CLC
           RTS
 
-; ************
-  z_scan_table
-; ************
+*******************
+Module z_scan_table
+*******************
 
-; ************
-  z_copy_table
-; ************
+; Input : X1 = search value
+;         X2 = address of table
+;         X3 = number of table entries
+;         X4 = type (default = $82)
+
+          LDA X3H
+          BMI zst_fa          ; length  < 0 : false
+          ORA X3L
+          BEQ zst_fa          ; length == 0 : false
+
+          LDA ParNum
+          CMP #4              ; type parameter given ?
+          BNE zst_10          ; -> use default type $82
+          LDA X4L
+          BNE zst_20          ; -> use type parameter
+
+zst_10    LDA #$82            ; default: word table, size=2
+          STA X4L             ; word/byte flag
+
+zst_20    LDX X3L             ; countdown low
+          BIT X4L
+          BMI zst_30          ; -> word
+          LDA X1L
+          STA X1H             ; byte to search
+
+zst_30    LDA X2L             ; setup table address
+          STA QD0
+          LDA X2H
+          STA QD1
+          LDA #0
+          STA QD2
+
+zst_40    LDA QD0             ; remember address
+          STA X0L
+          LDA QD1
+          STA X0H
+
+          JSR Next_Datum      ; next table item high (or byte)
+          CMP X1H             ; compare
+          BNE zst_50          ; -> no match
+          BIT X4L
+          BPL zst_tr          ; -> compare bytes
+          JSR Next_Datum      ; next table item low
+          CMP X1L             ; compare
+          BEQ zst_tr          ; -> match
+
+zst_50    LDA X4L
+          AND #$7f            ; length
+          CLC
+          ADC X0L             ; QD = X0 + item length
+          STA QD0
+          BCC zst_60          ; -> no page crossed
+          LDA #0
+          ADC X0H
+          STA QD1
+
+zst_60    TXA                 ; countdown low
+          BNE zst_70
+          DEC X3H
+zst_70    DEX
+          TXA
+          ORA X3H
+          BNE zst_40
+
+zst_fa    JSR Store_Zero      ; Store 0 and return false
+          JMP Main_False
+
+zst_tr    JSR Store_X0        ; store X and return true
+          JMP Main_True
+EndMod
+
+******************
+Module Clear_Table
+******************
+
+          CLC
+          LDA X1H
+          ADC #>Z_HEADER
+          STA X1H
+          LDY #0              ; Y = 0
+ClTa_10   LDA #0              ; A = 0
+          STA (X1L),Y
+          INY
+          BNE ClTa_20
+          INC X1H
+ClTa_20   DEW X3L
+          BNE ClTa_10
+          RTS
+EndMod
+
+*******************
+Module z_copy_table
+*******************
 
 ; Input : X1 = source
 ;         X2 = target
 ;         X3 = size
 
+          LDA X2L
+          ORA X2H
+          BEQ Clear_Table
+          LDA X3L
+          ORA X3H
+          BEQ cota_ret        ; size = 0
 
-; *************
-  z_print_table
-; *************
+          LDA X3H
+          BPL cota_20         ; -> safe copy
+
+          SEC                 ; make size positive
+          LDA #0
+          SBC X3L
+          STA X3L
+          LDA #0
+          SBC X3H
+          STA X3H
+          JMP cota_30         ; -> forced forward
+
+cota_20   LDA X1L
+          CMP X2L
+          LDA X1H
+          SBC X2H
+          BCS cota_30         ; -> (X1 > X2) forward
+
+          LDA X1L             ; check overlap (X1 < X2)
+          ADC X3L             ; C=0
+          TAX                 ; X = end source low
+          LDA X1H
+          ADC X3H             ; (X/A) = end source + 1
+          CMP X2H
+          BCC cota_30         ; no overlap -> forward
+          BNE cota_45         ;    overlap -> backward
+          CPX X2L
+          BEQ cota_30         ; source end == dest start
+          BCS cota_45
+
+; forward copy (X1 may point to high memory)
+
+cota_30   LDA #0              ; data pointer = source
+          STA QD2
+          LDA X1H
+          STA QD1
+          LDA X1L
+          STA QD0
+
+          CLC
+          LDA X2H
+          ADC #>Z_HEADER
+          STA X2H
+
+cota_35   JSR Next_Datum      ; LDA (source)
+          LDY #0
+          STA (X2L),Y         ; STA (target)
+          INW X2L             ; ++X2
+          DEW X3L             ; --X3 (counter)
+          BNE cota_35         ; -> loop
+cota_ret  RTS
+
+; backward copy
+
+cota_45   CLC                 ; set source end
+          LDA X1L
+          ADC X3L
+          STA X1L
+          LDA X1H
+          ADC X3H
+          ADC #>Z_HEADER
+          STA X1H
+          CLC                 ; set target end
+          LDA X2L
+          ADC X3L
+          STA X2L
+          LDA X2H
+          ADC X3H
+          ADC #>Z_HEADER
+          STA X2H
+          LDY #0
+cota_50   DEW X1L             ; --X1
+          DEW X2L             ; --X2
+          LDA (X1L),Y
+          STA (X2L),Y         ; copy byte
+          DEW X3L             ; --X3
+          BNE cota_50         ; loop
+          RTS
+EndMod
+
+********************
+Module z_print_table
+********************
 
 ; Input : X1 = zscii text
 ;         X2 = width
 ;         X3 = height
 ;         X4 = skip
 
+          JSR Print_Buffer
+          LDA X1L             ; set text address
+          STA QD0
+          LDA X1H
+          STA QD1
+          LDA #0
+          STA QD2
+          LDA ParNum
+          CMP #3
+          BCS zpt_10
+          LDA #1
+          STA X3L             ; default height = 1
+zpt_10    JSR Save_Cursor
+zpt_20    JSR Restore_Cursor
+          LDX X2L             ; width
+          BEQ zpt_40
+          STX X2H
+zpt_30    JSR Next_Datum
+          JSR CHROUT
+          DEC X2H             ; column countdown
+          BNE zpt_30
+          DEC X3L             ; row    countdown
+          BEQ zpt_40
+          INC C_Save_Row
+          JMP zpt_20
 zpt_40    RTS
+EndMod
 
-; **********
-  z_tokenize
-; **********
+*****************
+Module z_tokenize
+*****************
 
 ;         X1 = text input buffer
 ;         X2 = parse buffer
 ;         X3 = dictionary
 ;         X4 = flag
 
-          BRK
+          CLC
+          LDA X1H
+          ADC #>Z_HEADER
+          STA X1H             ; input buffer
+          LDX ParNum
+          DEX
+          DEX
+          BEQ _standard       ; standard dictionary
+          DEX
+          STX Tokenizer_Flag  ; 0 or 1
+          LDA X3L
+          LDY X3H
+          JMP Parse_AY_Dict
+_standard JMP Parse_Input
+EndMod
 
-; *********************************
-  z_check_argc   ;     opcode # $ff
-; *********************************
+****************************************
+Module z_check_argc   ;     opcode # $ff
+****************************************
+
+          LDA Z_Arg_Count
+          CMP X1L
+          BCS zca_10
+          JMP Main_False
+zca_10    JMP Main_True
           RTS
+EndMod
 
-; ***********
-  z_log_shift
-; ***********
+******************
+Module z_log_shift
+******************
+
+; Input : X1 = number
+;         X2 = shifts
+
+          LDA X1L
+          LDY X2L
+          BMI _right
+_left     ASL A
+          ROL X1H
+          DEY
+          BNE _left
+          BEQ _store
+
+_right    LSR X1H
+          ROR A
+          INY
+          BNE _right
+
+_store    LDX X1H
+          JMP Store_AX
+EndMod
 
 ; **********
   z_set_font
@@ -2320,31 +2311,60 @@ zpt_40    RTS
 ; 3 : character graphics
 ; 4 : fixed pitch
 
+;          JSR Print_Buffer
+;          LDA E_Attribute
+;          LDX X1L
+;          CPX #3
+;          BNE SeFo_10
+;          AND #$7f
+;          BIT
+;SeFo_10   ORA #$80
+;          STA E_Attribute
+;          LDA Z_Active_Font
+;          STX Z_Active_Font
+;          JMP Store_Byte
           JMP Store_Zero
-Z_Active_Font .BYTE 1
 
-; ************************************
-  z_set_color ; opcodes 1b 3b 5b 7b db
-; ************************************
+*******************************************
+Module z_set_color ; opcodes 1b 3b 5b 7b db
+*******************************************
 
 ; Input : X1 = foreground color
 ;         X2 = background color
 
           JSR Print_Buffer
 
-
+          LDX X1L
+          LDA BG_CODE,X
+          STA FG_Color
+          LDX X2L
+          LDA BG_CODE,X
+          STA BG_Color
           RTS
+EndMod
 
-; *********************************
-  z_call_n       ; op2 opcode # $f9
-; *********************************
+BG_CODE   .BYTE $00 ;  0 current
+          .BYTE $00 ;  1 default
+          .BYTE $00 ;  2 black
+          .BYTE $08 ;  3 red
+          .BYTE $04 ;  4 green
+          .BYTE $0d ;  5 yellow
+          .BYTE $02 ;  6 blue
+          .BYTE $0a ;  7 magenta
+          .BYTE $06 ;  8 cyan
+          .BYTE $0f ;  9 white
+
+****************************************
+Module z_call_n       ; op2 opcode # $f9
+****************************************
 
           LDA #1
-          BNE call_00         ; always
+          BRA call_00         ; always
+EndMod
 
-; *********************************
-  z_call_s       ; op2 opcode # $00
-; *********************************
+****************************************
+Module z_call_s       ; op2 opcode # $00
+****************************************
 
 ; call subroutine (X1) with 0 - 3 arguments
 ; X1 = subroutine address / 2 (word count)
@@ -2388,7 +2408,11 @@ call_20   LDA z_frame_ptr      ; push frame pointer
           LDA #0
           ROL A
           STA QI2             ; IP = (X1) * 2
-          JSR Next_Instruction
+          BIT Version
+          BPL call_25
+          ASL QI0
+          ROW QI1             ; IP = (X1) * 4
+call_25   JSR Next_Instruction
           STA A1H             ; number of local variables
           BEQ call_50         ; no local variables
           LDX #1
@@ -2397,13 +2421,19 @@ call_30   LDY Lvar_Hi,X
           LDA Lvar_Lo,X
           JSR Push_AY         ; push local var of caller
 ;-----------------------------
+          BIT Version
+          BPL call_32
+          LDA #0              ; initialize with zero
+          STA Lvar_Hi,X
+          STA Lvar_Lo,X
+          BRA call_36
 ;-----------------------------
-          JSR Next_Instruction; initialize with default value
+call_32   JSR Next_Instruction; initialize with default value
           STA Lvar_Hi,X
           JSR Next_Instruction; from instruction stream
           STA Lvar_Lo,X
 ;-----------------------------
-          CPX ParNum          ; index > # of args ?
+call_36   CPX ParNum          ; index > # of args ?
           BCS call_40         ; -> stay with default value
 
           TXA
@@ -2426,13 +2456,13 @@ call_50   LDY Z_Arg_Count
           LDA z_stack_ptr
           STA z_frame_ptr      ; set new frame pointer
           RTS
+EndMod
 
-; ****************************
-  z_storew       ; X1[X2] = X3
-; ****************************
+***********************************
+Module z_storew       ; X1[X2] = X3
+***********************************
 
-          ASL X2L
-          ROL X2H
+          ASW X2L
           JSR X1_PLUS_X2_TO_A0
           LDA X3H
           STA (A0L),Y
@@ -2440,6 +2470,7 @@ call_50   LDY Z_Arg_Count
           LDA X3L
           STA (A0L),Y
           RTS
+EndMod
 
 ; ****************************
   z_storeb       ; X1[X2] = X3
@@ -2530,7 +2561,6 @@ zprnu_3   INX
           STA X2L
           LDA X1H
           STA X2H
-
           LDA Random
           LDX Raster
           STX X1L
@@ -2540,11 +2570,9 @@ zprnu_3   INX
           LDA RemH
           STA X0H
           LDX RemL
-          INX
           STX X0L
-          BNE zrand_1
-          INC X0H
-zrand_1   JMP Store_X0
+          INW X0L
+          JMP Store_X0
 
 ; ******
   z_push
@@ -2569,71 +2597,91 @@ zrand_1   JMP Store_X0
 ;         X3 = start index
 ;         X4 = encoded text
 
-
-; ***********
-  z_read_char
-; ***********
-          RTS
-
-
-
-; *************
-  Lower_Case_X1
-; *************
-         LDY #1
-LCX1_10  LDA (X1L),Y
-         CMP #' '
-         BCC LCX1_Ret
-         CMP #'Z'+1
-         BCS LCX1_20
-         CMP #'A'
-         BCC LCX1_20
-         ADC #$1f
-         STA (X1L),Y
-LCX1_20  INY
-         BPL LCX1_10
-LCX1_Ret RTS
-
-; ******
-  z_read
-; ******
-
-          JSR z_show_status
-          JSR Print_Buffer    ; print prompt
-          LDX #0
-          STX Tokenizer_Flag
-          SEC                 ; c=1 : no parsing
-          LDX ParNum
-          DEX
-          BEQ zread_10        ; -> no parsing
-          LDA X2L
-          ORA X2H
-          BEQ zread_10        ; -> no parsing
-          CLC                 ; parse!
-zread_10  PHP                 ; push parse flag
           CLC
           LDA X1H
           ADC #>Z_HEADER
           STA X1H
+          LDA #0
+          LDX #9              ; word length
+zet_10    STA TEXT_WORD-1,X
+          DEX
+          BNE zet_10
 
-          JSR Get_Line_X1     ; read input from user
-          JSR Lower_Case_X1   ; convert
-          PLP                 ; pull parse flag
-          BCS zread_20
-          JSR Parse_Input     ; use standard dictionary
-zread_20
+          LDY X3L
+zet_20    LDA (X1L),Y
+          PHX
+          PHY
+          JSR Sep_All
+          PLY
+          PLX
+          BCS zet_30
+          STA TEXT_WORD,X
+          INY
+          INX
+          CPX Word_Length
+          BCS zet_30
+          CPX X2L
+          BCC zet_20
 
+zet_30    JSR Encode
+          CLC
+          LDA X4L
+          STA A0L
+          LDA X4H
+          ADC #>Z_HEADER
+          STA A0H
+          LDY Vocab_Length
+          DEY
+zet_40    LDA DICT_WORD,Y
+          STA (A0L),Y
+          DEY
+          BPL zet_40
           RTS
 
 ; ***********
-  Parse_Input
+  z_read_char
 ; ***********
+          JSR Print_Buffer
+          LDA Upper_Size
+          STA MORE_Counter
+          JSR Get_Character
+          JMP Store_Byte
 
-; Input   Carry =   set: use X3 as    dictionary address
-;                 clear: use standard dictionary
+*************
+Module z_read
+*************
+
+          BIT Version
+          BMI _V4
+          JSR z_show_status
+_V4       JSR Print_Buffer    ; print prompt
+          LDX #0
+          STX Tokenizer_Flag
+          CLC
+          LDA X1H
+          ADC #>Z_HEADER
+          STA X1H
+          JSR Get_Line_X1     ; read input from user
+          DEC ParNum
+          BEQ _no_parse
+          LDA X2L
+          ORA X2H
+          BEQ _no_parse
+          JSR Parse_Input
+_no_parse BIT Version
+          BPL _return
+          LDA #CR
+          JMP Store_Byte
+_return   RTS
+EndMod
+
+******************
+Module Parse_Input
+******************
+
 ;         X1    = text input buffer
 ;         X1[0] = buffer size
-;         X1[1] = string length (ZV > 3)
+;         X1[1] = string length (Version > 3)
 
 ;         X2    = parse buffer  (item size = 4)
 ;         X2[0] = buffer size   (max. 59 items)
@@ -2649,13 +2697,14 @@ zread_20
 ;         X6L   = X2[1] = items parsed
 ;         X6H   = X2[0] = parse buffer limit
 
-          BCC Parse_05
-          LDA X3L
-          LDY X3H
-          BCS Parse_07
-Parse_05  LDA h_dictionary_lo
+          LDA h_dictionary_lo
           LDY h_dictionary_hi
-Parse_07  STA DPL
+
+*************
+Parse_AY_Dict
+*************
+
+          STA DPL
           STY DPH
           CLC
           LDA X2H             ; X2 += Header
@@ -2672,10 +2721,17 @@ Parse_07  STA DPL
 Parse_10  LDA #59
           STA (X2L),Y         ; use default
 Parse_15  STA X6H             ; copy of parse buffer limit
-          LDY #2              ; Y = 2
+          BIT Version
+          BPL Parse_17
+          INY                 ; Y = 1
+          LDA (X1L),Y
+          STA Chars_Left      ; Version > 3
+Parse_17  LDY #2              ; Y = 2
           STY Parse_Index     ; start in parse buffer
-          DEY                 ; start at 1 for ZV == 3
-          STY X5L             ; buffer index
+          BIT Version
+          BMI Parse_18
+          DEY                 ; start at 1 for Version = 3
+Parse_18  STY X5L             ; buffer index
           LDY #0
           STY X6L             ; items parsed
           STY X5H             ; word size = 0
@@ -2697,14 +2753,14 @@ Parse_25  LDY #1              ; finish
 ; continue parsing word
 
 Parse_30  LDA X5H             ; word size
-          CMP #WORD_LENGTH
+          CMP Word_Length
           BCC Parse_35        ; -> word length < max
           JSR Skip_Surplus    ; skip to next delimiter
 
 Parse_35  LDA X5H             ; word size
           BNE Parse_45        ; -> search word in dictionary
 
-          LDX #WORD_LENGTH-1  ; clear Word buffer
+          LDX #8              ; clear Word buffer
 Parse_40  STA TEXT_WORD,X
           DEX
           BPL Parse_40
@@ -2733,7 +2789,7 @@ Parse_45  LDA Chars_Left
           DEC Chars_Left
           INC X5H             ; ++word size
           INC X5L             ; ++buffer index
-          JMP Parse_20
+          BRA Parse_20
 
 Parse_50  STA TEXT_WORD       ; word is a separator
           DEC Chars_Left
@@ -2769,6 +2825,7 @@ Parse_60  LDA X7L,X           ; 1 : Dict address lo
           BCC Parse_60
 Parse_70  STY Parse_Index     ; Parse_Index += 4
           JMP Parse_20
+EndMod
 
 ; ************
   Skip_Surplus
@@ -2907,7 +2964,7 @@ DiSe_30   JSR Next_Datum
           INX
           CMP DICT_WORD-1,X
           BNE DiSe_50
-          CPX #V_SIZE
+          CPX Vocab_Length
           BCC DiSe_30
           RTS                 ; -> match
 
@@ -2916,118 +2973,20 @@ DiSe_50   JSR Next_Datum      ; skip to next item
           CPX DPI             ; item_Size
           BCC DiSe_50
 
-          INC X4L             ; count up to zero
-          BNE DiSe_20
-          INC X4H
+          INW X4L             ; count up to zero
           BNE DiSe_20
 
           LDA #0
 DiSe_70   STA X7H             ; not found: return (X7) = 0
           STA X7L
-          RTS
+DiSe_Ret  RTS
 
-; ***********
-  Next_Datum
-; ***********
-
-; Input
-; =====
-; QD0 = Block pointer
-; QD1 = Block # lo
-; QD2 = Block # hi
-
-; Output
-; ======
-; (A) = Byte from (Block),QD0
-; Pointer QD incremented
-
-          LDA #0
-          STA RAM_BA
-          LDZ QD0
-          LDA QD2             ; page high
-          BNE NEDA_10         ; > 64 K
-          LDA QD1
-          CMP Resident_Pages
-          BCS NEDA_10         ; -> not resident
-          ADC #>Z_HEADER
-          STA RAM_HI
-          BNE NEDA_50         ; -> always
-
-; load if address is beyond resident part
-; address = (QD1/2) - Resident + $040000
-
-NEDA_10   SEC
-          LDA QD1             ; page low
-          SBC Resident_Pages
-          STA RAM_HI          ; page low
-          LDA QD2
-          SBC #0              ; page high
-          ADC #3              ; bank 4 = carry  + 3
-          STA RAM_BA
-NEDA_50   LDA [RAM_LO],Z
-          INC QD0
-          BNE NEDA_80
-          INC QD1
-          BNE NEDA_80
-          INC QD2
-NEDA_80   CMP #0              ; set flags
-          RTS
-
-; ****************
-  Next_Instruction
-; ****************
-
-; Input
-; =====
-; QI0 = pointer inside page
-; QI1 = page # low
-; QI2 = page # high
-
-; Output
-; ======
-; (A) = Byte from 24 bit address (QI)
-; Pointer QI incremented
-; test if address is inside resident part
-
-          LDA #0
-          STA RAM_BA
-          LDZ QI0
-          LDA QI2             ; page high
-          BNE NEIN_10         ; > 64 K
-          LDA QI1
-          CMP Resident_Pages
-          BCS NEIN_10         ; -> not resident
-          ADC #>Z_HEADER
-          STA RAM_HI
-          BNE NEIN_50         ; -> always
-
-; load if address is beyond resident part
-; address = (QI1/2) - Resident + $040000
-
-NEIN_10   SEC
-          LDA QI1             ; page low
-          SBC Resident_Pages
-          STA RAM_HI          ; page low
-          LDA QI2
-          SBC #0              ; page high
-          ADC #3              ; bank 4 = carry  + 3
-          STA RAM_BA
-NEIN_50   LDA [RAM_LO],Z
-          INC QI0
-          BNE NEIN_80
-          INC QI1
-          BNE NEIN_80
-          INC QI2
-NEIN_80   CMP #0              ; set flags
-          RTS
 
 ;                6789abcdef0123456789abcdef
 ;                --------------------------
 ;         .BYTE "abcdefghijklmnopqrstuvwxyz"
 ;         .BYTE "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 ZSCII_2   .BYTE "\0\r0123456789.,!?_#'\"/\\-:()"
-
-Swap_Ret   RTS
 
 ; *********
   Decode_YX
@@ -3047,9 +3006,9 @@ Swap_Ret   RTS
           LDX #0
           STX QDH
 DeTe_10   LDX #0
-          STX alphabet
+          STX Alphabet
 DeTe_15   JSR Get_Packed_Char
-          BCS Swap_Ret        ; return
+          BCS DiSe_Ret        ; return
           BNE DeTe_20
           LDA #' '            ; 0 : space
           BNE DeTe_40
@@ -3057,9 +3016,9 @@ DeTe_20   CMP #4              ; 1,2,3 : abbreviations
           BCC DeTe_55
           CMP #6              ; shift 4:capital, 5:numeric
           BCS DeTe_25
-          STA alphabet
+          STA Alphabet
           BCC DeTe_15
-DeTe_25   LDX alphabet
+DeTe_25   LDX Alphabet
           CPX #5              ; numeric
           BNE DeTe_30
           TAX
@@ -3204,17 +3163,17 @@ GPC_Ret   RTS                 ; return with 1st. char
 ; Also the output length is restricted to 6 characters (4 in bersion 3)
 ; because this is the size of a dictionary entry.
 
-; Input:  6-9 ASCII charcaters in RB0-RB8
-; Output: 4-6 Z     characters in RA0-RA5
+; Input:  6-9 ASCII charcaters in TEXT_WORD
+; Output: 4-6 Z     characters in DICT_WORD
 
-          LDY #0              ; RB[Y]
-          LDX #0              ; RA[X]
+          LDY #0              ; TEXT_WORD[Y]
+          LDX #0              ; DICT_WORD[X]
           BEQ Enco_30
 
 Enco_10   LDA #5              ; void (numeric shift)
 Enco_20   STA DICT_WORD,X     ; store next ZSCII
           INX
-          CPX #WORD_LENGTH
+          CPX Word_Length
           BCS Enco_70
 
           INY
@@ -3290,81 +3249,128 @@ Enco_80   LDA DICT_WORD+1,X
           INX
           INY
           INY
-          CPX #WORD_LENGTH
+          CPX Word_Length
           BCC Enco_80
           LDA DICT_WORD-2,Y
           ORA #$80            ; end of string flag
           STA DICT_WORD-2,Y
           RTS
 
+*************
+Module A0_x_8
+*************
 
-; *************
-  Get_Object_X1
-; *************
+          STA A0L
+          STX A0H             ; (A0) = object
+          ASL A
+          ROL A0H             ; (A/A0H) = object *  2
+          ASL A
+          ROL A0H             ; (A/A0H) = object *  4
+          ASL A
+          ROL A0H             ; (A/A0H) = object *  8
+          RTS
+EndMod
+
+********************
+Module Object_Offset
+********************
+
+; V3 Address = (h_objects) + 53 + 9 * object
+
+          BIT Version
+          BMI _V4
+          LDX #0
+          JSR A0_x_8
+          ADC A0L
+          BCC _label
+          INC A0H             ; (A/A0H) = object *  9
+          CLC
+_label    ADC #53             ; V3 offset 53
+          RTS
+
+; V4 Address = (h_objects) + 112 + 14 * object
+
+_V4       JSR A0_x_8
+          SEC
+          SBC A0L
+          PHA                 ; low  of  (object *  7)
+          LDA A0H
+          STX A0H
+          SBC A0H
+          STA A0H             ; high of  (object *  7)
+          PLA
+          ASL A
+          ROL A0H             ; (A/A0H) = object * 14
+          ADC #112            ; V4 offset 112
+          RTS
+EndMod
+
+********************
+Module Get_Object_X1
+********************
 
           LDA X1L
+          LDX X1H
 
-; **************
-  Get_Object_Reg
-; **************
+**************
+Get_Object_Reg
+**************
 
 ; Compute address of object
 
-; Version 3:
+; Version > 3:
 ; -----------------------------------------
-; Address = (h_objects) +  53 +  9 * object
+; Address = (h_objects) + 112 + 14 * object
+; Input : (A/X) = input  object id
+;         Y     = object item
+; Output: (A/X) = output object id
+;         (A0L) = address
 
-; Input:  (A)  = object #
-; Input:  (A)  = object #
-; Output: (A0) = address, (A) = (A0L),Y
-; Modifies A and X
-
-          STA A0L
-          LDX #0
-          STX A0H
-          ASL A
-          ROL A0H ; * 2
-          ASL A
-          ROL A0H ; * 4
-          ASL A
-          ROL A0H ; * 8
-          ADC A0L ; * 9       ; carry is clear
-          BCC GOA_01
+          JSR Object_Offset
+          BCC _label
           INC A0H
-GOA_01    CLC
-          ADC #$35            ; * 9 + 53
-          BCC GOA_02
-          INC A0H
-GOA_02    CLC
-          ADC h_objects_lo    ; *9 + 53 + h_objects
+          CLC
+_label    ADC h_objects_lo
           STA A0L
           LDA A0H
           ADC h_objects_hi
           ADC #>Z_HEADER
           STA A0H
+          LDX #0             ; object hi for V3
+          BIT Version
+          BPL _objlow
           LDA (A0L),Y
+          TAX                ; object hi
+          INY
+_objlow   LDA (A0L),Y        ; object lo
           RTS
+EndMod
 
-; **************
-  First_Property
-; **************
+*********************
+Module First_Property
+*********************
 
 ; Find address of property table of object (X1)
-; This routine is V3 and V5 compatible
 
 ; Input : (X1) = object ID
 ; Output: (A0) = pointer to property table after NAME
 ;          A   = ID of first property
 ;          Y   = 0
 
-          LDY #O_PROP         ; offset to property pointer
-          JSR Get_Object_X1
-          ADC #>Z_HEADER      ; C=0 from Get_Object
+          LDY #7              ; version = 3 offset to property pointer
+          BIT Version
+          BPL _fips_1
+          LDY #12             ; version > 3 offset to property pointer
+_fips_1   JSR Get_Object_X1
+          BIT Version
+          BMI _fips_2
           TAX                 ; property pointer high
           INY
           LDA (A0L),Y         ; property pointer low
-          STA A0L
-          STX A0H             ; (A0) = property table
+_fips_2   STA A0L             ; property table low
+          TXA                 ; property table high
+          ADC #>Z_HEADER      ; C=0 from Get_Object
+          STA A0H             ; (A0) = property table
           LDY #0              ; offset to NAME property
           LDA (A0L),Y         ; size of name (words)
           ASL A               ; size of name (bytes)
@@ -3374,15 +3380,32 @@ GOA_02    CLC
           BCC FiPr_10
           INC A0H
 FiPr_10   LDA (A0L),Y
-          AND #P_MASK         ; A = property ID
+          AND Prop_Mask       ; A = property ID
+          RTS
+EndMod
+
+********************
+Module Property_Size
+********************
+
+          BIT Version
+          BPL _V3
+          LDA (A0L),Y
+          BPL _one
+          INY
+          LDA (A0L),Y         ; 2nd. size byte
+          INY
+          AND Prop_Mask
           RTS
 
+_one      INY                 ; Y points after size
+          ASL A               ; bit 7 = length info
+          ASL A               ; carry = length info
+          ROL A               ; bit 0 = length info
+          AND #1
+          RTS
 
-; *************
-  Property_Size
-; *************
-
-          LDA (A0L),Y
+_V3       LDA (A0L),Y
           INY
           LSR A
           LSR A
@@ -3390,6 +3413,7 @@ FiPr_10   LDA (A0L),Y
           LSR A
           LSR A
           RTS
+EndMod
 
 ; *************
   Next_Property
@@ -3410,12 +3434,12 @@ FiPr_10   LDA (A0L),Y
           INC A0H
 NePr_20   LDY #0
           LDA (A0L),Y
-          AND #P_MASK
+          AND Prop_Mask
           RTS
 
-; *************
-  Find_Property
-; *************
+********************
+Module Find_Property
+********************
 
 ; search for property X2L of object X1
 
@@ -3429,13 +3453,19 @@ NePr_20   LDY #0
 ;             C = 1 if separate length byte
 
           JSR First_Property  ; -> (A0) and Y = 0
-FIPR_10   CMP X2L
-          BEQ FIPR_20         ; -> match
-          BCC FIPR_30         ; -> not in table (Z=0)
+_loop     CMP X2L
+          BEQ _match
+          BCC _return         ; -> not in table (Z=0)
           JSR Next_Property
-          JMP FIPR_10
-FIPR_20   CLC
-FIPR_30   RTS                 ; Z=1 succes, Z=0 not found
+          BRA _loop
+_match    CLC
+          BIT Version
+          BPL _ok
+          LDA (A0L),Y         ; prepare pointer advancement
+          ASL A               ; C=1 for 2 byte header
+_ok       LDA #0              ; set zero flag
+_return   RTS                 ; Z=1 success, Z=0 not found
+EndMod
 
 ; *************
   Get_Attr_Addr
@@ -3472,10 +3502,6 @@ gaa_02    DEX
 ; *********
 
           LDA Z_Code
-
-; *********
-  Dump_Byte
-; *********
           JSR ASCII_Hex
           PHA
           TXA
@@ -3483,16 +3509,22 @@ gaa_02    DEX
           PLA
           JMP CHROUT
 
+
 ; **************
   INTERNAL_ERROR
 ; **************
 
           JSR ASCII_TS
-          STX INTERR+6
-          STA INTERR+7
+          STX INTERR+7
+          STA INTERR+8
           JSR z_new_line
           JSR Dump_Code
           Print(INTERR)
+          LDX #2
+INER_10   LDA 0,X
+          STA $4000,X
+          INX
+          BNE INER_10
           JMP z_quit
 
 ; ***************
@@ -3500,19 +3532,43 @@ gaa_02    DEX
 ; ***************
 
           STA Z_STATUS,Y
-          CPY Last_Col
+          CPY #COLS-1
           BCS PTS_01
           INC Status_Col
 PTS_01    RTS
 
+****************
+Module Print_Mem
+****************
 
-; ***************
-  Print_Formatted
-; ***************
+         LDY #0
+         STA (Z_Mem_Ptr),Y
+         INW Z_Mem_Ptr
+         RTS
+EndMod
 
-          LDY Status_Col
+; ****************
+  Print_Unbuffered
+; ****************
+
+          JMP CHROUT
+
+**********************
+Module Print_Formatted
+**********************
+
+          BIT Version
+          BPL PrFo_10
+          BIT Z_Mem_Flag
+          BMI Print_Mem       ; print to stream # 3
+          LDY Z_Buffer_Mode
+          BEQ Print_Unbuffered
+          LDY Z_Active_Window
+          BNE Print_Unbuffered
+          BEQ PrFo_20
+PrFo_10   LDY Status_Col      ; Version 3
           BPL Print_To_Status
-          CMP #CR
+PrFo_20   CMP #CR
           BEQ z_new_line
           CMP #' '            ; not printable ?
           BCC PrFo_25
@@ -3522,7 +3578,7 @@ PTS_01    RTS
           CLC
           TYA
           ADC Cursor_Col
-          CMP Last_Col
+          CMP #COLS
           BCS PrFo_30         ; -> buffer full: print row
 
 
@@ -3553,6 +3609,7 @@ PrFo_50   CPX Charbuf_End
           BCC PrFo_45
           STY Charbuf_Ptr
           RTS
+EndMod
 
 ; ************
   z_new_line
@@ -3560,11 +3617,10 @@ PrFo_50   CPX Charbuf_End
 
           INC MORE_Counter
           LDX MORE_Counter
-          INX
-          CPX Last_Row
+          CPX #ROWS-2
           BCC Terminate_Buffer
           JSR z_show_status
-          LDA Z_Upper_Size
+          LDA Upper_Size
           STA MORE_Counter
           JSR Empty_Keyboard_Queue
           JSR Save_Cursor
@@ -3667,21 +3723,19 @@ FORINT_05 LDY NUMBER,X
           BCC FORINT_05
 FORINT_06 RTS
 
-; *************
-  Status_Number
-; *************
+********************
+Module Status_Number
+********************
 
+; This routine is used in version 3 stories
 ; Insert number (score, moves, time) into status line
-; Imput : (Y) = global variable
-;         (A) = status line column
-; Output: (Y) = column after last written char
+; Imput : (A) = global variable
+;         (Y) = status line column
 
-          PHA                 ; save column
-          TYA
+          PHY
           JSR Get_Global_Var
           JSR Format_Integer
-          PLA
-          TAY
+          PLY
           LDX #0
 StNu_10   LDA NUMBER,X
           CMP #' '
@@ -3692,12 +3746,13 @@ StNu_20   INX
           CPX #5
           BCC StNu_10
           RTS
+EndMod
 
-; **********
-  Print_Time
-; **********
+*****************
+Module Print_Time
+*****************
 
-          LDA #$11            ; hours
+          LDA #$11            ; hours var
           JSR Get_Global_Var
           JSR Format_Integer
           LDY #STIME_COL
@@ -3706,7 +3761,7 @@ StNu_20   INX
           LDA NUMBER+4
           STA STIME+1,Y
 
-          LDA #$12            ; minutes
+          LDA #$12            ; minutes var
           JSR Get_Global_Var
           JSR Format_Integer
           LDY #STIME_COL
@@ -3716,40 +3771,48 @@ StNu_20   INX
           LDA NUMBER+4
           STA STIME+4,Y
 
-          SEC
-          LDA Last_Col
-          SBC #12
-          TAY
-          LDX #[STIME - SCORE]
-          BNE PrSc_20
-
-; ***********
-  Print_Score
-; ***********
-
-          LDY #$11            ; score
-          LDA #SCORE_COL
-          JSR Status_Number
-          LDY #$12            ; moves
-          LDA #MOVES_COL
-          JSR Status_Number
-
-          LDY #STAT_SCORE
-          BIT Cols
-          BVS PrSc_10
-          LDY #28
-PrSc_10   LDX #0
-PrSc_20   LDA SCORE,X
-          STA Z_STATUS,Y
+          LDX #0
+_loop     LDA STIME,X
+          STA Z_STATUS+88,X
           INX
-          INY
-          CPY Last_Col
-          BCC PrSc_20
+          CPX #12
+          BCC _loop
           RTS
+EndMod
 
-; ************
-  Print_Status
-; ************
+******************
+Module Print_Score
+******************
+
+          LDA #' '
+          LDY #SCORE_COL+4
+_clr_sc   STA SCORE,Y         ; clear score
+          DEY
+          CPY #SCORE_COL
+          BNE _clr_sc
+          LDA #$11            ; score var
+          JSR Status_Number   ; print score
+          LDA #' '
+          LDY #MOVES_COL+4
+_clr_mv   STA SCORE,Y         ; clear score
+          DEY
+          CPY #MOVES_COL
+          BNE _clr_mv
+          LDA #$12            ; moves var
+          JSR Status_Number
+
+          LDX #0
+_loop     LDA SCORE,X
+          STA Z_STATUS+STAT_SCORE,X
+          INX
+          CPX #COLS-STAT_SCORE
+          BCC _loop
+          RTS
+EndMod
+
+*******************
+Module Print_Status
+*******************
 
           JSR Select_Status_Window
           LDA #YELLOW
@@ -3757,459 +3820,49 @@ PrSc_20   LDA SCORE,X
           Print(PRE_STATUS)
           LDA #<Z_STATUS
           LDY #>Z_STATUS
-          LDX Last_Col
-          DEX                 ; status starts at HOME + 1
+          LDX #COLS-1
           JSR PrintText
           LDA #REVERSE_OFF
           JSR CHROUT
           LDA #WHITE
           STA COLOR
           JMP Select_Text_Window
+EndMod
 
-; *************
-  z_show_status
-; *************
-
-; save cursor coordinates, print to statusline
-
-          JSR Save_Cursor
-
-; push QD2, QD1, QD0, QDH, QDL
-
-          LDX #4
-zss_10    LDA QDL,X
-          PHA
-          DEX
-          BPL zss_10
-
-          INX                 ; X = 0
-          STX Status_Col      ; switch decoder to status line
-          LDA #$10            ; get location
-          JSR Get_Global_Var
-          LDA X0L
-          LDX X0H
-          JSR z_print_obj_A
-          LDA #' '            ; fill rest of line with blanks
-          LDX Status_Col
-          STX Location_Length
-zss_20    STA Z_STATUS,X    ; erase rest of line
-          INX
-          CPX Last_Col
-          BCC zss_20
-
-          LDX #$ff
-          STX Status_Col      ; reset decoder
-          LDA h_config
-          AND #2              ; Score_Time_Flag
-          BNE zss_30
-          JSR Print_Score
-          JMP zss_40
-zss_30    JSR Print_Time
-zss_40    JSR Print_Status
-
-; pull QDL, QDH, QD0, QD1, QD2 after recursive call
-
-          LDX #0
-zss_90    PLA
-          STA QDL,X
-          INX
-          CPX #5
-          BCC zss_90
-
-          JMP Restore_Cursor
-
-
-; **********
-  Fix_Colors
-; **********
-
-          LDX #7
-FiCo_10   LDA FG_Color,X
-          AND #15
-          STA FG_Color,X
-          DEX
-          BPL FiCo_10
-          RTS
-
-; *********
-  Cursor_On
-; *********
-          LDY Cursor_Col
-          LDA #$A0
-          STA (Scr_Adr),Y
-          STA Cursor_Vis
-          RTS
-
-; **********
-  Cursor_Off
-; **********
-          LDY Cursor_Col
-          LDA #' '
-          STA (Scr_Adr),Y
-          LDA #0
-          STA Cursor_Vis
-          RTS
-
-; *************
-  Get_Character
-; *************
-
-; get a character from keyboard
-; allow all ASCII characters $20 - $7e
-; allow control codes CR and DEL
-; compare char with CR before return
-
-          CLI
-          PHY                 ; save Y
-          JSR Cursor_On
-GeCh_10   JSR GETIN
-          BEQ GeCh_10
-          CMP #CR
-          BEQ GeCh_40         ; allow CR
-          CMP #DEL
-          BEQ GeCh_40
-          CMP #'Z'+$81        ; CBM 'Z'+1
-          BCS GeCh_30         ; -> not ASCII
-          CMP #'A'+$80        ; CBM 'A'
-          BCC GeCh_22
-          AND #$7f            ; to ASCII
-          BNE GeCh_40         ; always
-
-GeCh_22   CMP #'Z'+1          ; CBM 'z'+1
-          BCS GeCh_30         ; -> not ASCII
-          CMP #'A'            ; CBM 'a'
-          BCC GeCh_24
-          ADC #$1f            ; to ASCII
-          BNE GeCh_40         ; always
-
-GeCh_24   CMP #' '
-          BCS GeCh_40
-
-GeCh_30   JSR Error_Beep      ; unacceptable
-          JMP GeCh_10
-
-GeCh_40   PHA                 ; push char
-          JSR Cursor_Off
-          PLA
-          PLY                 ; restore Y
-          CMP #CR
-          RTS
-
-; ******************
-  Scroll_Main_Window
-; ******************
-
-          LDX Z_Upper_Size
-          JSR Set_Screen_Pointer_X
-          CLC
-          LDA Scr_Adr
-          ADC Cols
-          STA SAP         ; screen low
-          STA TAP         ; colour low
-          LDA Scr_Adr+1
-          ADC #0
-          STA SAP+1       ; screen high
-          AND #7
-          STA TAP+1       ; colour high
-          LDA #$f8
-          STA TAP+2       ; colour bank low
-          LDA #$0f
-          STA TAP+3       ; colour bank high
-SMW_10    LDZ Last_Col
-SMW_20    LDA (SAP),Z
-          STA (Scr_Adr),Z
-          LDA [TAP],Z
-          STA [Col_Adr],Z
-          DEZ
-          BPL SMW_20
-          CLC
-          LDA SAP
-          STA Scr_Adr
-          STA Col_Adr
-          ADC Cols            ; C=0
-          STA SAP
-          STA TAP
-          LDA SAP+1
-          STA Scr_Adr+1
-          AND #7
-          STA Col_Adr+1
-          LDA SAP+1
-          ADC #0
-          STA SAP+1
-          AND #7
-          STA TAP+1
-          INX
-          CPX Last_Row
-          BCC SMW_10
-          LDZ Last_Col
-SMW_30    LDA #' '
-          STA (Scr_Adr),Z
-          LDA #1
-          STA [Col_Adr],Z
-          DEZ
-          BPL SMW_30
-          RTS
-
-; ***********
-  Home_Screen
-; ***********
-
-          .BYTE $da ; PHX
-          LDX #0
-          STX Cursor_Col
-          JSR Set_Screen_Pointer_X
-          .BYTE $fa ; PLX
-          RTS
-
-; ************
-  Clear_Screen
-; ************
-
-          PHX
-          PHY
-          LDX #0
-          JSR Set_Screen_Pointer_X
-          LDX #8
-          LDY #0
-          LDA #' '
-ClSc_10   STA (Scr_Adr),Y
-          INY
-          BNE ClSc_10
-          INC Scr_Adr+1
-          DEX
-          BNE ClSc_10
-          LDX #8
-          LDA #1
-          LDZ #0
-ClSc_20   STA [Col_Adr],Z
-          INZ
-          BNE ClSc_20
-          INC Col_Adr+1
-          DEX
-          BNE ClSc_20
-          STX Cursor_Col
-          JSR Set_Screen_Pointer_X
-          PLY
-          PLX
-          RTS
-
-; *************
-  Return_Screen
-; *************
-          PHX
-          PHY
-          LDY #0
-          STY Cursor_Col
-          LDX Cursor_Row
-          INX
-          CPX #ROWS
-          BCC ReSc_10
-          JSR Scroll_Main_Window
-          LDX #ROWS-1
-ReSc_10   STX Cursor_Row
-          JSR Set_Screen_Pointer_X
-          PLY
-          PLX
-
-; ******************
-  Screen_Reverse_Off
-; ******************
-
-          LDA #0
-          STA RVS
-          RTS
-
-
-; *****************
-  Screen_Reverse_On
-; *****************
-
-          LDA #$80
-          STA RVS
-          RTS
-
-; **********
-  Screen_Del
-; **********
-          .BYTE $5a ; PHY
-          LDY Cursor_Col
-          BEQ ScDe_Ret
-          LDA #' '
-          STA (Scr_Adr),Y
-          DEC Cursor_Col
-ScDe_Ret  .BYTE $7a ; PLY
-          RTS
-
-; ******
-  CHROUT
-; ******
-
-          CMP #HOME
-          BEQ Home_Screen
-          CMP #CLEAR
-          BEQ Clear_Screen
-          CMP #CR
-          BEQ Return_Screen
-          CMP #REVERSE_ON
-          BEQ Screen_Reverse_On
-          CMP #REVERSE_OFF
-          BEQ Screen_Reverse_Off
-          CMP #DEL
-          BEQ Screen_Del
-
-          PHX
-          PHY
-          PHA
-          LDZ Cursor_Col
-          LDA COLOR
-          STA [Col_Adr],Z
-          PLA
-          AND #$7f
-          CMP #' '
-          BCS CHRO_20
-          LDA #'.'            ; 00-1f -> replace with dot
-          BNE CHRO_80
-CHRO_20   CMP #'['
-          BCC CHRO_80
-          AND #$1f            ; 5b-7f -> 01-1f
-
-CHRO_80   LDY Cursor_Col
-          ORA RVS
-          STA (Scr_Adr),Y
-          INC Cursor_Col
-          CPY Last_Col
-          BCC CHRO_90
-          JSR Return_Screen
-CHRO_90   PLY
-          PLX
-          RTS
-
-; ********
-  Got_Line
-; ********
-
-; Get line from keyboard with preset text
-
-          STX X1L
-          STY X1H
-          LDY #0
-          LDA (X1L),Y
-          STA Chars_Left      ; maximum edit length
-          MAC_Color(CYAN)
-          LDY #0
-goli_01   INY
-          LDA (X1L),Y
-          DEY
-          CMP #' '
-          BCC GLX_20
-          INY
-          CMP #'A'
-          BCC goli_10
-          CMP #'Z'+1
-          BCS goli_10
-          ADC #$20
-goli_10   JSR CHROUT
-          JMP goli_01
-
-; ***********
-  Get_Line_X1
-; ***********
-
-          LDA Z_Upper_Size
-          STA MORE_Counter
-          MAC_Color(CYAN)
-          LDY #0
-          LDA (X1L),Y
-          STA Chars_Left      ; maximum edit length
-          BNE GLX_10
-          DEC Chars_Left
-GLX_10
-
-; receive character from keyboard loop
-
-GLX_20    JSR Get_Character  ; Y = previous position
-          BEQ GLX_90         ; -> CR = end of input
-          CMP #DEL
-          BNE GLX_40
-          DEY                ; Y = prev - 1
-          BPL GLX_30
-          JSR Error_Beep      ; No DEL at 1st. char
-          INY                 ; restore Y
-          JMP GLX_20
-
-; handle DEL character
-
-GLX_30
-          JSR CHROUT           ; print DEL
-          JMP GLX_20
-
-; check edit limit
-
-GLX_40    CPY Chars_Left      ; edit limit
-          BEQ GLX_45
-          BCS GLX_50          ; -> at limit
-GLX_45    LDX Cursor_Col
-          INX
-          CPX Last_Col        ; -> end of line
-          BCC GLX_70
-
-GLX_50    JSR Error_Beep      ; reached max buffer length
-          JMP GLX_20
-
-GLX_70    INY
-          STA (X1L),Y
-          JSR CHROUT          ; ASCII print
-          BNE GLX_20
-
-; receivced CR: terminate buffer and return
-
-GLX_90    INY
-          STA (X1L),Y         ; store CR
-          JSR CHROUT
-          DEY                 ; don't count CR
-          STY Chars_Left      ; edit length
-          MAC_Color(WHITE)
-          RTS
-
-; *********
-  PrintText
-; *********
-
-          STA MEMUSS
-          STY MEMUSS+1
-          LDY #0
-PrTe_A    LDA (MEMUSS),Y
-          BEQ PrTe_B
-          JSR CHROUT
-          INY
-          DEX
-          BNE PrTe_A
-PrTe_B    RTS
-
-; **************
-  z_split_window
-; **************
+*******************
+MODULE z_set_window
+*******************
           JSR Print_Buffer
-          LDX X1L             ; new size
-          BPL split_10
-          LDX #0              ; C64 workaround
-split_10  CPX #ROWS
-          BCS split_err
-          STX Z_Upper_Size    ; update size
+          LDX X1L             ; new active window
+          CPX Z_Active_Window
+          BEQ _return         ; -> no change
+          STX Z_Active_Window
+          LDA FG_Color,X
+          STA COLOR
+          TXA
+          BEQ _lower
+
+; switch from window lower window 0 to upper window 1
+
+          LDX #0
           STX Win_Top
-          LDX Cursor_Row
-          CPX Z_Upper_Size
-          BCS split_20
-          JSR Window_Home
-split_20  JSR Set_Screen_Pointer
-          RTS
-split_err BRK
+          DEX                 ; X = -1
+          STX Z_Monospace
+          LDX Upper_Size
+          DEX
+          STX Win_Bot
+_return   RTS
 
-; ************
-  z_set_window
-; ************
-zsw_ret   RTS
+; switch from upper window 1 to lower window 0
 
+_lower    LDA Upper_Size    ; window 0: lower
+          STA Win_Top
+          LDX #ROWS-1
+          STX Win_Bot
+          LDY #0
+          STY Z_Monospace
+          JMP Set_Row_Col
+ENDMOD
 
 ; *************
   Set_Underline
@@ -4220,6 +3873,21 @@ zsw_ret   RTS
           BEQ Sund_10
           LDA #%1111 1100
 Sund_10   STA Z_Underline
+          RTS
+
+; ***********
+  Set_Reverse
+; ***********
+
+; Input : Z-Flag
+
+          BEQ Srev_10
+          LDA #$80
+          STA RVS             ; reverse on
+          RTS
+
+Srev_10   LDA #0              ; reverse off
+          STA RVS
           RTS
 
 ; ****************
@@ -4233,11 +3901,20 @@ Sund_10   STA Z_Underline
 ;          ^ 1: Reverse       RVS = $ff
 ;            0: Normal        RVS = 0    Underline = 0
 
-          RTS
+          JSR Print_Buffer
+          LDA X1L
+          AND #1
+          JSR Set_Reverse
+          LDA X1L
+          AND #4
+          JMP Set_Underline
 
 ; *************
   z_buffer_mode
 ; *************
+          JSR Print_Buffer
+          LDA X1L
+          STA Z_Buffer_Mode
           RTS
 
 ; ************
@@ -4247,27 +3924,112 @@ Sund_10   STA Z_Underline
 ; Input : X1 = new row position relative to window top
 ;         X2 = new column position
 
-          RTS
+          LDA Upper_Size
+          STA MORE_Counter
+          JSR Print_Buffer    ; the Z  cursor home is [1:1]
 
-; ***************
-  z_output_stream
-; ***************
+          LDX X1L             ; the OS cursor home is [0:0]
+          DEX                 ; so subtract 1 from each
+          LDY X2L
+          DEY
+
+;  JSR Monitor_Break
+
+          TXA
+          CLC
+          ADC Win_Top
+          TAX
+          JMP Set_Row_Col
+
+**********************
+Module z_output_stream
+**********************
 
 ; Input:  (X1L) = stream number  3:  select memory
 ;                               -3:deselect memory
 ;         (X2)  = table address
 
+          JSR Print_Buffer    ; flush buffer
+          LDA X1L             ; stream number
+          CMP #-3             ; deselect memory stream ?
+          BEQ zos_20          ; -> do
+          CMP #3              ; select memory stream ?
+          BNE zos_10          ; no -> return
+          LDA #-1
+          STA Z_Mem_Flag      ; open memory channel
+          CLC
+          LDA X2H
+          ADC #>Z_HEADER
+          STA Z_Mem_Base+1    ; Z_Mem_Base = TABLE
+          STA Z_Mem_Ptr+1
+          LDA X2L
+          STA Z_Mem_Base
+          ADC #2
+          STA Z_Mem_Ptr       ; Z_Mem_Ptr = TABLE+2
+          BCC zos_10
+          INC Z_Mem_Ptr+1
+zos_10    RTS
+
+; close memory channel
+; store length of TABLE in first word of (Z_Mem_Base)
+
+zos_20    LDY #1
+          LDA Z_Mem_Base      ; (A0) = (Z_Mem_Base)
+          STA A0L
+          LDA Z_Mem_Base+1
+          STA A0H
+          SEC
+          LDA Z_Mem_Ptr       ; (A/X) = (Z_Mem_Ptr)-2
+          LDX Z_Mem_Ptr+1
+          SBC #2
+          BCS zos_30
+          DEX
+          SEC
+zos_30    SBC A0L
+          STA (A0L),Y         ; length low
+          DEY                 ; Y = 0
+          STY Z_Mem_Flag      ; close channel
+          TXA
+          SBC A0H
+          STA (A0L),Y         ; length high
           RTS
+EndMod
 
 ; **************
   z_erase_window
 ; **************
-zew_20    BRK
+          JSR Print_Buffer
+          LDX X1L
+          CPX #-1
+          BNE zew_10
+          LDA #0
+          STA Upper_Size
+          STA Win_Top
+          STA Z_Active_Window
+          LDA #CLEAR
+          JMP CHROUT
+zew_10    JMP Erase_Upper_Window
 
 ; ***********
   z_extension
 ; ***********
-          BRK
+          PLA                  ; remove return address
+          PLA
+          JSR Next_Instruction ; extendedcode
+          STA Z_Code
+          JSR Next_Instruction ; operand type
+          JSR Load_4_Operands
+          LDA Z_Code
+          AND #$1f
+          CMP #10
+          BCS z_error12
+          ASL A
+          TAY
+          LDA opcodes_ext,Y
+          STA JSRMOD+1
+          LDA opcodes_ext+1,Y
+          STA JSRMOD+2
+          JMP JSRMOD
 
 z_error12 ERROR(12)
 
@@ -4275,6 +4037,10 @@ z_error12 ERROR(12)
 ; ***********
   z_save_undo
 ; ***********
+
+          LDA #$FF
+          TAX
+          JMP Store_AX
 
 ; **************
   z_sound_effect
@@ -4300,15 +4066,7 @@ z_error12 ERROR(12)
           RTS
 
 
-; ************
-  Reset_Screen
-; ************
 
-          JSR Clear_Screen
-          JSR Return_Screen
-          LDA Z_Upper_Size
-          STA MORE_Counter
-          RTS
 
 ; ********************
   Empty_Keyboard_Queue
@@ -4356,39 +4114,9 @@ DeUn_20   AND #15
           JSR Empty_Keyboard_Queue
 wfret_10  JSR Get_Character
           BEQ wfret_99        ; -> CR
-          JSR Error_Beep
+;         JSR Error_Beep
           JMP wfret_10
 wfret_99  RTS
-
-; **********
-  Open_Story
-; **********
-
-          LDA Game_Unit       ; open "Z3 *",FA,8
-          STA FA
-          JSR LISTEN
-          LDA #$f8
-          JSR SECOND
-          LDA #'Z'
-          JSR CIOUT
-          LDA #'3'
-          JSR CIOUT
-          LDA #' '
-          JSR CIOUT
-          LDA #'*'
-          JSR CIOUT
-          JMP UNLSN
-
-; ************
-  Close_Story
-; ************
-
-          LDA Game_Unit       ; close #8
-          STA FA
-          JSR LISTEN
-          LDA #$e8
-          JSR SECOND
-          JMP UNLSN
 
 ; ***********
   File_Dialog
@@ -4396,16 +4124,7 @@ wfret_99  RTS
 
           LDX #<File_Buf
           LDY #>File_Buf
-          JSR Got_Line
-          LDX #20
-FiDi_10   LDA File_Text,X
-          CMP #'a'
-          BCC FiDi_20
-          SBC #$20
-          STA File_Text,X
-FiDi_20   DEX
-          BPL FiDi_10
-          RTS
+          JMP Got_Line
 
 ; ****************
   Read_Disk_Status
@@ -4441,6 +4160,9 @@ RDS_30    LDA #CR
 ; **********
   z_ext_save
 ; **********
+          JSR Save_Game
+          LDA #1
+          JMP Store_Byte
 ; ******
   z_save
 ; ******
@@ -4480,7 +4202,10 @@ WG_10     LDA QI0,X           ; save IP
 WG_20     LDA File_Text,Y
           CMP #' '
           BCC WG_30
-          JSR CIOUT
+          CMP #'a'
+          BCC WG_25
+          SBC #$20
+WG_25     JSR CIOUT
           INY
           BNE WG_20
 
@@ -4574,7 +4299,10 @@ RG_02     LDA Z_VAR,X          ; to stack bottom -
 RG_10     LDA File_Text,Y
           CMP #' '
           BCC RG_20
-          JSR CIOUT
+          CMP #'a'
+          BCC RG_15
+          SBC #$20
+RG_15     JSR CIOUT
           INY
           BPL RG_10
 RG_20     JSR UNLSN
@@ -4667,6 +4395,924 @@ ReBl_10   JSR ACPTR
           LDA #'.'
           JMP CHROUT
 
+
+
+********
+* DATA *
+********
+
+Row_Lo    .BYTE <[SCREEN]
+          .BYTE <[SCREEN +  1 * COLS]
+          .BYTE <[SCREEN +  2 * COLS]
+          .BYTE <[SCREEN +  3 * COLS]
+          .BYTE <[SCREEN +  4 * COLS]
+          .BYTE <[SCREEN +  5 * COLS]
+          .BYTE <[SCREEN +  6 * COLS]
+          .BYTE <[SCREEN +  7 * COLS]
+          .BYTE <[SCREEN +  8 * COLS]
+          .BYTE <[SCREEN +  9 * COLS]
+          .BYTE <[SCREEN + 10 * COLS]
+          .BYTE <[SCREEN + 11 * COLS]
+          .BYTE <[SCREEN + 12 * COLS]
+          .BYTE <[SCREEN + 13 * COLS]
+          .BYTE <[SCREEN + 14 * COLS]
+          .BYTE <[SCREEN + 15 * COLS]
+          .BYTE <[SCREEN + 16 * COLS]
+          .BYTE <[SCREEN + 17 * COLS]
+          .BYTE <[SCREEN + 18 * COLS]
+          .BYTE <[SCREEN + 19 * COLS]
+          .BYTE <[SCREEN + 20 * COLS]
+          .BYTE <[SCREEN + 21 * COLS]
+          .BYTE <[SCREEN + 22 * COLS]
+          .BYTE <[SCREEN + 23 * COLS]
+          .BYTE <[SCREEN + 24 * COLS]
+
+Row_Hi    .BYTE >[SCREEN]
+          .BYTE >[SCREEN +  1 * COLS]
+          .BYTE >[SCREEN +  2 * COLS]
+          .BYTE >[SCREEN +  3 * COLS]
+          .BYTE >[SCREEN +  4 * COLS]
+          .BYTE >[SCREEN +  5 * COLS]
+          .BYTE >[SCREEN +  6 * COLS]
+          .BYTE >[SCREEN +  7 * COLS]
+          .BYTE >[SCREEN +  8 * COLS]
+          .BYTE >[SCREEN +  9 * COLS]
+          .BYTE >[SCREEN + 10 * COLS]
+          .BYTE >[SCREEN + 11 * COLS]
+          .BYTE >[SCREEN + 12 * COLS]
+          .BYTE >[SCREEN + 13 * COLS]
+          .BYTE >[SCREEN + 14 * COLS]
+          .BYTE >[SCREEN + 15 * COLS]
+          .BYTE >[SCREEN + 16 * COLS]
+          .BYTE >[SCREEN + 17 * COLS]
+          .BYTE >[SCREEN + 18 * COLS]
+          .BYTE >[SCREEN + 19 * COLS]
+          .BYTE >[SCREEN + 20 * COLS]
+          .BYTE >[SCREEN + 21 * COLS]
+          .BYTE >[SCREEN + 22 * COLS]
+          .BYTE >[SCREEN + 23 * COLS]
+          .BYTE >[SCREEN + 24 * COLS]
+
+L_Encode_A  .BYTE 0 ;
+L_Encode_Y  .BYTE 0 ;
+
+; data for separators / delimiters in parsing
+
+Sep_Std_List    .BYTE "!?,.\r " ; built in standard
+Z_Arg_Count     .BYTE 0 ; argument count
+Z_Buffer_Mode   .BYTE 1 ; output buffering on or off
+Z_Call_Type     .BYTE 0 ; type of subroutine call
+Z_Monospace     .BYTE 0
+Z_Underline     .BYTE 0
+Z_Active_Window .BYTE 0
+
+******************************
+* Cursor, Windows and Screen *
+******************************
+
+******************
+Set_Screen_Pointer
+******************
+
+          LDX Cursor_Row
+
+********************
+Set_Screen_Pointer_X
+********************
+
+          LDA Row_Lo,X
+          STA Scr_Adr
+          STA Col_Adr
+          LDA Row_Hi,X
+          STA Scr_Adr+1
+          AND #7
+          STA Col_Adr+1
+          RTS
+
+
+***********
+Window_Home
+***********
+
+          LDX Upper_Size
+          LDY #0
+
+***********
+Set_Row_Col
+***********
+
+; Input : X = screen row    (0 .. 24)
+;         Y = screen column (0 .. 79)
+
+          CPX #ROWS
+          BCC SRC_10
+          LDX #ROWS-1
+SRC_10    CPY #COLS
+          BCC SRC_20
+          LDY #COLS-1
+
+SRC_20    STX Cursor_Row
+          STY Cursor_Col
+          JSR Set_Screen_Pointer
+
+***********
+Get_Row_Col
+***********
+
+; Output: X = screen row    (0 .. 24)
+;         Y = screen column (0 .. 79)
+
+          LDX Cursor_Row
+          LDY Cursor_Col
+          RTS
+
+**********
+Info_Print
+**********
+
+; Input: (X) = First page, (A) = Last page, (Y) = print pos
+;----------------------------------------------------------
+
+          PHA
+          TXA
+          JSR ASCII_Hex
+          STA InfoPro + 10,Y
+          TXA
+          STA InfoPro +  9,Y
+          PLA
+          JSR ASCII_Hex
+          STA InfoPro + 17,Y
+          TXA
+          STA InfoPro + 16,Y
+          LDA #0
+          STA X0H
+          LDA Info_Pages
+          STA X0L
+
+; *********
+  Info_Size
+; *********
+          TYA
+          PHA
+          JSR Format_Integer
+          PLA
+          TAY
+          LDX #1
+InSi_10   LDA NUMBER,X
+          STA InfoPro+21,Y
+          INY
+          INX
+          CPX #5
+          BCC InSi_10
+          RTS
+
+; ************
+  Screen_Setup
+; ************
+
+          LDA #$0F       ; colour RAM: $FF80000
+          STA Col_Adr+3
+          LDA #$F8
+          STA Col_Adr+2
+          RTS
+
+; ***********
+  Story_Pages
+; ***********
+
+; Leave story size in X0L/X0H for printing
+
+          LDA #0
+          STA X0H
+          LDA h_file_size_hi    ; size in words high
+          STA X0L
+          LDA h_file_size_lo    ; size in words low
+          ASL A
+          ROL X0L
+          ROL X0H               ; size * 2
+          BIT Version
+          BPL STTS_05
+          ASL A
+          ROL X0L
+          ROL X0H               ; size * 4
+STTS_05   CMP #0
+          BEQ STTS_10           ; at page boundary
+          INW X0L               ; add 1 to round up
+STTS_10   RTS
+
+
+; *********
+  z_restart
+; *********
+
+          CLD
+          LDX #$fb       ; Commodore default stack initialisation
+          TXS
+          LDA #0         ; clear ZP variables
+          LDX #Z_Code    ; start of interpreter variables
+Start_10  STA 0,X
+          INX
+          CPX #ZP_END
+          BCC Start_10
+          LDA #1
+          STA Upper_Size       ; status line for version 3
+          JSR Screen_Setup
+          INC z_stack_ptr      ;  1
+          INC z_frame_ptr      ;  1
+          DEC Status_Col       ; -1
+          JSR Open_Story       ; open  8,8,8,"z3*"
+          LDA #>Z_HEADER
+          STA RAM_HI
+          JSR Load_Page        ; load first block to Z_HEADER
+          LDA h_version
+          CMP #6
+          BCS Start_20         ; version > 5
+          CMP #3
+          BCC Start_20         ; version < 3
+          BEQ Start_15         ; version = 3
+          ORA #$80             ; version > 3
+          STA Version
+          LDA #9
+          STA Word_Length
+          LDA #6
+          STA Vocab_Length
+          LDA #$3f
+          STA Prop_Mask
+          BRA Start_22
+
+; Version 3 initialisation
+
+Start_15  STA Version
+          LDA #6
+          STA Word_Length
+          LDA #4
+          STA Vocab_Length
+          LDA #$1f
+          STA Prop_Mask
+          LDA #<z_not
+          STA ZV8F
+          LDA #>z_not
+          STA ZV8F+1
+          LDA #<z_pop
+          STA ZVB9
+          LDA #>z_pop
+          STA ZVB9+1
+          BRA Start_22
+
+Start_20  Print(NOSTORY)
+          JMP quit_20
+Start_22
+
+; =================
+; Set Memory Layout
+; =================
+
+          LDX #>[$D000 - Z_HEADER]
+          STX Resident_Pages  ; reserved
+          LDX #COLS
+          STX h_screen_cols
+
+          LDA h_config
+          ORA #%0011 0001     ; fixed font / colours
+;               0--- ---- 7:timed input
+;                 1- ---- 5:split screen
+;                  1 ---- 4:fixed  font
+;                    0--- 3:italic font
+;                     0-- 2:bold   font
+;                      0- 1:pictures
+;                       1 0:colors
+          STA h_config
+          LDA #%0000 1100
+          ORA h_flags_lo
+          STA h_flags_lo
+          LDA #0
+          STA h_screen_width_hi
+          STA h_screen_height_hi
+          LDA #COLS
+          STA h_screen_width_lo
+          LDA #ROWS-1
+          STA h_screen_height_lo
+          LDA #1
+          STA h_font_width
+          STA h_font_height
+          LDA #8              ; 6:PC 7:C128 8:C64
+          STA h_interpreter_number
+          LDA #'G'
+          STA h_interpreter_version
+
+; -------- compute story location and size -----
+
+          LDA #>EOP - >START+1 ; program
+          STA Info_Pages
+          LDX #>START
+          LDA #>EOP
+          LDY #0
+          JSR Info_Print
+          LDA Resident_Pages ; static
+          STA Info_Pages
+          CLC
+          ADC #>Z_HEADER-1
+          LDX #>Z_HEADER
+          LDY #InfoSta-InfoPro
+          JSR Info_Print
+          JSR Story_Pages
+          LDY #InfoSto-InfoPro
+          JSR Info_Size
+          Print(BITSHIFTER)
+          JSR Select_Text_Window
+          LDA #<InfoClr
+          LDY #>InfoClr
+          LDX #[InfoEnd - InfoClr]
+          JSR PrintText
+
+Start_30  JSR Load_Page       ; Load resident area
+          LDA IO_STATUS
+          BNE Start_50        ; EOF
+          LDA Block_Lo
+          AND #7
+          BNE Start_40
+          LDA #'.'
+          JSR CHROUT
+Start_40  LDA Block_Lo
+          CMP Resident_Pages
+          BCC Start_30
+
+Start_50  JSR Load_Story
+          JSR Wait_for_Return
+          JSR Set_Mode_80
+          LDA h_start_pc_hi   ; Initialize pc
+          STA QI1
+          LDA h_start_pc_lo
+          STA QI0
+          JSR Reset_Screen
+          JMP PC_LOOP
+
+; ***********
+  Next_Datum
+; ***********
+
+; Input
+; =====
+; QD0 = Block pointer
+; QD1 = Block # lo
+; QD2 = Block # hi
+
+; Output
+; ======
+; (A) = Byte from (Block),QD0
+; Pointer QD incremented
+
+          LDA #0
+          STA RAM_BA
+          LDZ QD0
+          LDA QD2             ; page high
+          BNE NEDA_10         ; > 64 K
+          LDA QD1
+          CMP Resident_Pages
+          BCS NEDA_10         ; -> not resident
+          ADC #>Z_HEADER
+          STA RAM_HI
+          BNE NEDA_50         ; -> always
+
+; load if address is beyond resident part
+; address = (QD1/2) - Resident + $040000
+
+NEDA_10   SEC
+          LDA QD1             ; page low
+          SBC Resident_Pages
+          STA RAM_HI          ; page low
+          LDA QD2
+          SBC #0              ; page high
+          ADC #3              ; bank 4 = carry  + 3
+          STA RAM_BA
+NEDA_50   LDA [RAM_LO],Z
+          INC QD0
+          BNE NEDA_80
+          INC QD1
+          BNE NEDA_80
+          INC QD2
+NEDA_80   CMP #0              ; set flags
+          RTS
+
+; ****************
+  Next_Instruction
+; ****************
+
+; Input
+; =====
+; QI0 = pointer inside page
+; QI1 = page # low
+; QI2 = page # high
+
+; Output
+; ======
+; (A) = Byte from 24 bit address (QI)
+; Pointer QI incremented
+; test if address is inside resident part
+
+          LDA #0
+          STA RAM_BA
+          LDZ QI0
+          LDA QI2             ; page high
+          BNE NEIN_10         ; > 64 K
+          LDA QI1
+          CMP Resident_Pages
+          BCS NEIN_10         ; -> not resident
+          ADC #>Z_HEADER
+          STA RAM_HI
+          BNE NEIN_50         ; -> always
+
+; load if address is beyond resident part
+; address = (QI1/2) - Resident + $040000
+
+NEIN_10   SEC
+          LDA QI1             ; page low
+          SBC Resident_Pages
+          STA RAM_HI          ; page low
+          LDA QI2
+          SBC #0              ; page high
+          ADC #3              ; bank 4 = carry  + 3
+          STA RAM_BA
+NEIN_50   LDA [RAM_LO],Z
+          INC QI0
+          BNE NEIN_80
+          INC QI1
+          BNE NEIN_80
+          INC QI2
+NEIN_80   CMP #0              ; set flags
+          RTS
+
+
+; *************
+  z_show_status
+; *************
+
+; save cursor coordinates, print to statusline
+
+          JSR Save_Cursor
+
+; push QD2, QD1, QD0, QDH, QDL
+
+          LDX #4
+zss_10    LDA QDL,X
+          PHA
+          DEX
+          BPL zss_10
+
+          INX                 ; X = 0
+          STX Status_Col      ; switch decoder to status line
+          LDA #$10            ; get location
+          JSR Get_Global_Var
+          LDA X0L
+          LDX X0H
+          JSR z_print_obj_A
+          LDA #' '            ; fill rest of line with blanks
+          LDX Status_Col
+zss_20    STA Z_STATUS,X    ; erase rest of line
+          INX
+          CPX #COLS
+          BCC zss_20
+
+          LDX #$ff
+          STX Status_Col      ; reset decoder
+          LDA h_config
+          AND #2              ; Score_Time_Flag
+          BNE zss_30
+          JSR Print_Score
+          JMP zss_40
+zss_30    JSR Print_Time
+zss_40    JSR Print_Status
+
+; pull QDL, QDH, QD0, QD1, QD2 after recursive call
+
+          LDX #0
+zss_90    PLA
+          STA QDL,X
+          INX
+          CPX #5
+          BCC zss_90
+
+          JMP Restore_Cursor
+
+; **********
+  Fix_Colors
+; **********
+
+          LDX #7
+FiCo_10   LDA FG_Color,X
+          AND #15
+          STA FG_Color,X
+          DEX
+          BPL FiCo_10
+          RTS
+
+; *********
+  Cursor_On
+; *********
+          LDY Cursor_Col
+          LDA #$A0
+          STA (Scr_Adr),Y
+          STA Cursor_Vis
+          RTS
+
+; **********
+  Cursor_Off
+; **********
+          LDY Cursor_Col
+          LDA #' '
+          STA (Scr_Adr),Y
+          LDA #0
+          STA Cursor_Vis
+          RTS
+
+; *************
+  Get_Character
+; *************
+
+; get a character from keyboard
+; allow all ASCII characters $20 - $7e
+; allow control codes CR and DEL
+; compare char with CR before return
+
+          CLI
+          PHY                 ; save Y
+          JSR Cursor_On
+GeCh_10   JSR GETIN
+          BEQ GeCh_10
+          CMP #CR
+          BEQ GeCh_40         ; allow CR
+          CMP #DEL
+          BEQ GeCh_40
+          CMP #'Z'+$81        ; CBM 'Z'+1
+          BCS GeCh_30         ; -> not ASCII
+          CMP #'A'+$80        ; CBM 'A'
+          BCC GeCh_22
+          AND #$7f            ; to ASCII
+          BNE GeCh_40         ; always
+
+GeCh_22   CMP #'Z'+1          ; CBM 'z'+1
+          BCS GeCh_30         ; -> not ASCII
+          CMP #'A'            ; CBM 'a'
+          BCC GeCh_24
+          ADC #$1f            ; to ASCII
+          BNE GeCh_40         ; always
+
+GeCh_24   CMP #' '
+          BCS GeCh_40
+
+GeCh_30   ;JSR Error_Beep      ; unacceptable
+          JMP GeCh_10
+
+GeCh_40   PHA                 ; push char
+          JSR Cursor_Off
+          PLA
+          PLY                 ; restore Y
+          CMP #CR
+          RTS
+
+; ******************
+  Scroll_Main_Window
+; ******************
+
+          LDX Upper_Size
+          JSR Set_Screen_Pointer_X
+          CLC
+          LDA Scr_Adr
+          ADC #COLS
+          STA SAP         ; screen low
+          STA TAP         ; colour low
+          LDA Scr_Adr+1
+          ADC #0
+          STA SAP+1       ; screen high
+          AND #7
+          STA TAP+1       ; colour high
+          LDA #$f8
+          STA TAP+2       ; colour bank low
+          LDA #$0f
+          STA TAP+3       ; colour bank high
+SMW_10    LDZ #COLS-1
+SMW_20    LDA (SAP),Z
+          STA (Scr_Adr),Z
+          LDA [TAP],Z
+          STA [Col_Adr],Z
+          DEZ
+          BPL SMW_20
+          CLC
+          LDA SAP
+          STA Scr_Adr
+          STA Col_Adr
+          ADC #COLS           ; C=0
+          STA SAP
+          STA TAP
+          LDA SAP+1
+          STA Scr_Adr+1
+          AND #7
+          STA Col_Adr+1
+          LDA SAP+1
+          ADC #0
+          STA SAP+1
+          AND #7
+          STA TAP+1
+          INX
+          CPX #ROWS-1
+          BCC SMW_10
+          LDZ #COLS-1
+SMW_30    LDA #' '
+          STA (Scr_Adr),Z
+          LDA #1
+          STA [Col_Adr],Z
+          DEZ
+          BPL SMW_30
+          RTS
+
+******************
+MODULE Home_Screen
+******************
+
+          PHX
+          LDX #0
+          STX Cursor_Col
+          STX Cursor_Row
+          JSR Set_Screen_Pointer_X
+          PLX
+          RTS
+ENDMOD
+
+*******************
+MODULE Clear_Screen
+*******************
+
+          PHX
+          PHY
+          LDX #ROWS-1
+_loop     JSR Erase_Row
+          DEX
+          BPL _loop
+          JSR Home_Screen
+          PLY
+          PLX
+          RTS
+ENDMOD
+
+; *************
+  Return_Screen
+; *************
+          PHX
+          PHY
+          LDY #0
+          STY Cursor_Col
+          LDX Cursor_Row
+          INX
+          CPX #ROWS
+          BCC ReSc_10
+          JSR Scroll_Main_Window
+          LDX #ROWS-1
+ReSc_10   STX Cursor_Row
+          JSR Set_Screen_Pointer_X
+          PLY
+          PLX
+
+; ******************
+  Screen_Reverse_Off
+; ******************
+
+          LDA #0
+          STA RVS
+          RTS
+
+
+; *****************
+  Screen_Reverse_On
+; *****************
+
+          LDA #$80
+          STA RVS
+          RTS
+
+*****************
+Module Screen_Del
+*****************
+          PHY
+          LDY Cursor_Col
+          LDA #' '
+          STA (Scr_Adr),Y
+          DEC Cursor_Col
+          BPL _exit
+          INC Cursor_Col
+_exit     PLY
+          RTS
+EndMod
+
+*************
+MODULE CHROUT
+*************
+
+          CMP #HOME
+          BEQ Home_Screen
+          CMP #CLEAR
+          BEQ Clear_Screen
+          CMP #CR
+          BEQ Return_Screen
+          CMP #REVERSE_ON
+          BEQ Screen_Reverse_On
+          CMP #REVERSE_OFF
+          BEQ Screen_Reverse_Off
+          CMP #DEL
+          BEQ Screen_Del
+
+          PHX
+          PHY
+          PHA
+          LDZ Cursor_Col
+          CPZ #COLS
+          BCC CHRO_10
+          JSR Return_Screen
+CHRO_10   LDA COLOR
+          STA [Col_Adr],Z
+          PLA
+          AND #$7f
+          CMP #' '
+          BCS CHRO_20
+          LDA #'.'            ; 00-1f -> replace with dot
+          BNE CHRO_80
+CHRO_20   CMP #'['
+          BCC CHRO_80
+          AND #$1f            ; 5b-7f -> 01-1f
+
+CHRO_80   LDY Cursor_Col
+          ORA RVS
+          STA (Scr_Adr),Y
+          INC Cursor_Col
+          PLY
+          PLX
+          RTS
+ENDMOD
+
+***************
+Module Got_Line
+***************
+
+; Get line from keyboard with preset text
+
+          STX X1L
+          STY X1H
+          LDY #0
+          LDA (X1L),Y
+          STA Chars_Left      ; maximum edit length
+          MAC_Color(CYAN)
+_loop     INY
+          INY
+          LDA (X1L),Y
+          DEY
+          CMP #' '
+          BCC _set
+          JSR CHROUT
+          BRA _loop
+_set      BIT Version
+          BMI GLX_20
+          INW X1L
+          DEY
+          BRA GLX_20
+EndMod
+
+******************
+Module Get_Line_X1
+******************
+
+          LDA Upper_Size
+          STA MORE_Counter
+          MAC_Color(CYAN)
+          LDY #0
+          LDA (X1L),Y
+          STA Chars_Left      ; maximum edit length
+          BNE GLX_10
+          DEC Chars_Left
+GLX_10    BIT Version
+          BPL GLX_20
+          INY                 ; Version > 3
+
+; receive character from keyboard loop
+
+GLX_20    JSR Get_Character  ; Y = previous position
+          BEQ GLX_90         ; -> CR = end of input
+          CMP #DEL
+          BNE GLX_40
+          DEY                ; Y = prev - 1
+          BMI _del_err       ; version 3 check
+          BIT Version
+          BPL GLX_30
+          CPY #1             ; version > 3 check
+          BCS GLX_30         ; -> not at 1st. column
+
+_del_err ;JSR Error_Beep      ; No DEL at 1st. char
+          INY                 ; restore Y
+          JMP GLX_20
+
+; handle DEL character
+
+GLX_30    JSR Screen_Del       ; print DEL
+          JMP GLX_20
+
+; check edit limit
+
+GLX_40    CPY Chars_Left      ; edit limit
+          BEQ GLX_45
+          BCS GLX_50          ; -> at limit
+GLX_45    LDX Cursor_Col
+          INX
+          CPX #COLS-1         ; -> end of line
+          BCC GLX_70
+
+GLX_50    ;JSR Error_Beep      ; reached max buffer length
+          JMP GLX_20
+
+GLX_70    INY
+          CMP #'A'
+          BCC GLX_80
+          CMP #'Z'+1
+          BCS GLX_80
+          ADC #$20            ; to lower case
+GLX_80    STA (X1L),Y
+          JSR CHROUT          ; ASCII print
+          BRA GLX_20
+
+; receivced CR: terminate buffer and return
+
+GLX_90    INY
+          STA (X1L),Y         ; store CR
+          JSR CHROUT
+          MAC_Color(WHITE)
+          DEY                 ; don't count CR
+          STY Chars_Left      ; edit length
+          BIT Version
+          BPL _return
+          DEY
+          TYA
+          LDY #1
+          STA (X1L),Y         ; length of string
+          STA Chars_Left
+_return   RTS
+EndMod
+
+; *********
+  PrintText
+; *********
+
+          STA MEMUSS
+          STY MEMUSS+1
+          LDY #0
+PrTe_A    LDA (MEMUSS),Y
+          BEQ PrTe_B
+          JSR CHROUT
+          INY
+          DEX
+          BNE PrTe_A
+PrTe_B    RTS
+
+; **************
+  z_split_window
+; **************
+          JSR Print_Buffer
+          LDX X1L             ; new size
+          BPL split_10
+          LDX #0              ; C64 workaround
+split_10  CPX #ROWS
+          BCS split_err
+          STX Upper_Size    ; update size
+          STX Win_Top
+          LDX Cursor_Row
+          CPX Upper_Size
+          BCS split_20
+          JSR Window_Home
+split_20  JSR Set_Screen_Pointer
+          RTS
+split_err BRK
+
+; ************
+  Reset_Screen
+; ************
+
+          JSR Clear_Screen
+          JSR Return_Screen
+          LDA Upper_Size
+          STA MORE_Counter
+          RTS
+
+; **********
+  Open_Story
+; **********
+
+          LDA Game_Unit       ; open "Z*",FA,8
+          STA FA
+          JSR LISTEN
+          LDA #$f8
+          JSR SECOND
+          LDA #'Z'
+          JSR CIOUT
+          LDA #'*'
+          JSR CIOUT
+          JMP UNLSN
+
 ; **********
   ASCII_Hex
 ; **********
@@ -4696,7 +5342,7 @@ Hex_12   RTS
 
          LDA #1
          STA Win_Top
-         LDA Last_Row
+         LDA #ROWS-1
          STA Win_Bot
          RTS
 
@@ -4726,20 +5372,13 @@ Hex_12   RTS
           LDY C_Save_Col
           JMP Set_Row_Col
 
-; **************
-  Erase_Last_Row
-; **************
-
-          LDX #ROWS-1
-          LDY #0
-
 ; *********
   Erase_Row
 ; *********
 
           JSR Set_Screen_Pointer_X
           LDA #' '
-          LDY Last_Col
+          LDY #COLS-1
 ClRo_10   STA (Scr_Adr),Y
           DEY
           BPL ClRo_10
@@ -4752,7 +5391,7 @@ ClRo_10   STA (Scr_Adr),Y
 EUW_10    LDY #0
           JSR Erase_Row
           INX
-          CPX Z_Upper_Size
+          CPX Upper_Size
           BCC EUW_10
           RTS
 
@@ -4771,9 +5410,9 @@ asts_01   INX
           ADC #$3a
           RTS
 
-; *********
-  Load_Page
-; *********
+****************
+Module Load_Page
+****************
 
 ; Read 256 bytes of data from disk and store them in RAM
 ; at the address (RAM_LO) = 32 bit address.
@@ -4786,44 +5425,49 @@ asts_01   INX
           JSR TKSA            ; select channel to disk buffer
           LDZ #0
           STZ IO_STATUS
-LoPa_10   JSR ACPTR
+_loop     JSR ACPTR
           STA [RAM_LO],Z
           LDA IO_STATUS
-          BNE LoPa_20
+          BNE _eof
           INZ
-          BNE LoPa_10
-LoPa_20   JSR UNTLK           ; 256 bytes read, send untalk
-          INC Block_Lo        ; increment block number Block_Lo/Hi
-          BNE LoPa_30
-          INC Block_Hi
-LoPa_30   INC RAM_HI          ; advance RAM pointer page
+          BNE _loop
+_eof      JSR UNTLK           ; 256 bytes read, send untalk
+          INW Block_Lo        ; increment block word Block_Lo/Hi
+          INC RAM_HI          ; advance RAM pointer page
           RTS                 ; return OK
+EndMod
 
-; **********
-  Load_Story
-; **********
+*****************
+Module Load_Story
+*****************
 
 ; Continue story loading in bank 4 and bank 5
 
           LDX #0
           STX RAM_HI
-          LDX #4
+          LDX #4             ; RAM bank
           STX RAM_BA         ; load at $040000
-LoSt_10   JSR Load_Page
+_loop     JSR Load_Page
           LDA IO_STATUS
-          BNE LoSt_90        ; end of file
+          BNE _eof
           LDA Block_Lo
           AND #7
-          BNE LoSt_20
+          BNE _prog
           LDA #'.'
           JSR CHROUT
-LoSt_20   LDA RAM_HI
-          BNE LoSt_10
+_prog     LDA RAM_HI
+          BNE _loop
           INC RAM_BA
           LDA RAM_BA
           CMP #6
-          BCC LoSt_10
-LoSt_90   JMP Close_Story
+          BCC _loop
+_eof      LDA Game_Unit       ; close #8
+          STA FA
+          JSR LISTEN
+          LDA #$e8
+          JSR SECOND
+          JMP UNLSN
+EndMod
 
 ; *************
   Delete_Config
@@ -4912,10 +5556,8 @@ LoFi_20   JSR ACPTR
 LoFi_30   STA (A0L),Y
           LDA IO_STATUS
           BNE LoFi_60         ; EOF
-          INC A0L
-          BNE LoFi_40
-          INC A0H
-LoFi_40   LDA A0H
+          INW A0L
+          LDA A0H
           CMP A1H
           BCC LoFi_20
           LDA A0L
@@ -4959,17 +5601,15 @@ SaFi_10   LDA (FNADR),Y
           LDY #0
 SaFi_20   LDA (A0L),Y
           JSR CIOUT
-          INC A0L
-          BNE SaFi_40
-          INC A0H
-SaFi_40   LDA A0H
+          INW A0L
+          LDA A0H
           CMP A1H
           BCC SaFi_20
           LDA A0L
           CMP A1L
           BCC SaFi_20
 
-SaFi_60   JSR UNLSN           ; close file
+          JSR UNLSN           ; close file
           LDA FA
           JSR LISTEN
           LDA #$e3
@@ -4977,22 +5617,21 @@ SaFi_60   JSR UNLSN           ; close file
           JMP UNLSN
 
 TEXT_WORD       .FILL  9 (0) ; unpacked ASCII word
-DICT_WORD       .FILL 11 (0) ;   packed ZSCII word
 
-Location_Length .BYTE 0
 Tokenizer_Flag  .BYTE 0
+E_Attribute     .BYTE 0
+Z_Mem_Flag      .BYTE 0
+Z_Mem_Base      .WORD 0
 
 ; ------- data for unit dialog --------
-Unit_Buf        .BYTE 2 ; input length
-Unit_Text       .BYTE "08",0
+Unit_Buf  .BYTE 2,2 ; input length
+Unit_Text .BYTE "08",0
 ; ------- data for file name dialog----
-File_Buf        .BYTE 20 ; input length
+File_Buf  .BYTE 20,20 ; input length
 File_Text .BYTE "savename",0
           .FILL 12 (0)
 ; ------- story signature ------------
-Storyname .BYTE "Z3 *"
 Game_Unit .BYTE 8
-Save_Unit .BYTE 9
 
 PRESSRET  .BYTE "\rPress <RETURN> to continue."
 SAVEUNIT  .BYTE "Save to unit:"
@@ -5004,7 +5643,7 @@ EOS       .BYTE "End of session - press any key"
 NOSTORY   .BYTE "NO Z3 STORY"
 
 
-BITSHIFTER .BYTE CLEAR,"BIT SHIFTER 06-AUG-2020\r"
+BITSHIFTER .BYTE CLEAR,"BIT SHIFTER 02-SEP-2020\r"
 InfoClr    .BYTE CR
 InfoPro    .BYTE 'Program: 0001 - 00FF    0 Pages\r'
 InfoSta    .BYTE 'Bank  0: 0000 - 00FF    0 Pages\r'
@@ -5017,27 +5656,21 @@ PRE_STATUS .BYTE HOME,REVERSE_ON," "
 STAT_SCORE = 52
 MOVES_COL  = 22
 
-SCORE      .BYTE "Score: 0       Moves: 0     ",0
-STIME      .BYTE "Time: 00:00",0
+SCORE      .BYTE "Score: 0       Moves: 0     "
+STIME      .BYTE "Time: 00:00 "
 SCORE_COL  =  7
 STIME_COL  =  6
 
-Win_Top    .BYTE  0
 Win_Bot    .BYTE 24
-
-RAMB_0    .BYTE '\rRAM Bank 0: '
-RAMB_1    .BYTE '\rRAM Bank 1: '
-
-INTERR    .BYTE "Error 00"
+INTERR     .BYTE " Error 00 "
 
 ConfigDel  .BYTE "S0:"        ; prefix for scratch command
 Configname .BYTE "CONFIG"
-ConfigWri  .BYTE ",W"         ; postfix for write command
-
+           .BYTE ",W"         ; postfix for write command
 
 CONFIG_START
 FG_Color   .BYTE WHITE        ; f1 133
-TI_Color   .BYTE WHITE        ; f3 134
+TI_Color   .BYTE YELLOW       ; f3 134
 BO_Color   .BYTE BLUE         ; f5 135
 BG_Color   .BYTE BLUE         ; f2 137
 TB_Color   .BYTE RED          ; f4 138
